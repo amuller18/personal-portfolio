@@ -30,7 +30,7 @@
       "id": "1",
       "src": "./img/tutormatch_ex.png",
       "title": "Tutor Match",
-      "description": "Given a reddit story and youtube video, this script creates captions and text to speech. Then it overlays this onto the given youtube backround video.",
+      "description": "TutorMatch is a platform where college students can connect with peer tutors for paid sessions. Featuring secure payments and SMS reminders, TutorMatch makes finding and booking tutoring simple and reliable.",
       "link": "View live site"
     },
     {
