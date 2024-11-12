@@ -6,7 +6,7 @@ import Home from "./Pages/Home/Homescreen";
 
 function App() {
   return (
-    <div className="App">
+    <div className="MyPortfolio">
       <Router>
         <div>
           <Navbar />
