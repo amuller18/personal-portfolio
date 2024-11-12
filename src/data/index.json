@@ -1,0 +1,77 @@
+{
+  "skills": [
+    {
+      "id": "1",
+      "src": "./img/feather-pen-1.png",
+      "title": "Automation",
+      "description": "Using Python and other tools to automate processes and create efficient systems."
+    },
+    {
+      "id": "2",
+      "src": "./img/tag-1.png",
+      "title": "Data Science",
+      "description": "Analyzing and optimizing data using Python, NLP, and clustering techniques."
+    },
+    {
+      "id": "3",
+      "src": "./img/feather-pen-2.png",
+      "title": "Entrepreneurship",
+      "description": "Founding and growing businesses, with a focus on innovation and strategy."
+    },
+    {
+      "id": "4",
+      "src": "./img/product-chain-1.png",
+      "title": "Web Development",
+      "description": "Building user-friendly applications with tools like Bubble.io."
+    }
+  ],
+  "portfolio": [
+    {
+      "id": "1",
+      "src": "./img/tutormatch_ex.png",
+      "title": "Tutor Match",
+      "description": "Given a reddit story and youtube video, this script creates captions and text to speech. Then it overlays this onto the given youtube backround video.",
+      "link": "View live site"
+    },
+    {
+      "id": "2",
+      "src": "./img/scotty.png",
+      "title": "Scottybot",
+      "description": "Auto Checkout Bot for scottycameron.com, a high end golf retailer. Written using python and selenium as a personale project in high school",
+      "link": "View In Github"
+    },
+    {
+      "id": "3",
+      "src": "./img/linkedIn_img.jpg",
+      "title": "LinkedIn Activity Script",
+      "description": "This selenium script scrolls through linkedin and leaves relevant comments on posts using the bert language model and chatgpt api to generate the responses.",
+      "link": "View In Github"
+    }
+  ],
+  "testimonial": [
+    {
+      "id": "1",
+      "count": "5",
+      "src": "./img/avatar-image.png",
+      "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspenmdisse varius eim in eros elementum tristique",
+      "author_name": "Dianne Russel",
+      "author_designation": "Starbucks"
+    },
+    {
+      "id": "2",
+      "count": "5",
+      "src": "./img/avatar-image-1.png",
+      "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspenmdisse varius eim in eros elementum tristique",
+      "author_name": "Kristin Watson",
+      "author_designation": "Louis Vuitton"
+    },
+    {
+      "id": "3",
+      "count": "5",
+      "src": "./img/avatar-image-2.png",
+      "description": "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspenmdisse varius eim in eros elementum tristique",
+      "author_name": "Kathryn Murphy",
+      "author_designation": "McDonald's"
+    }
+  ]
+}
