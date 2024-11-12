@@ -43,7 +43,7 @@ export default function MyPortfolio() {
         {data?.portfolio?.map((item, index) => (
           <div key={index} className="portfolio--section--card">
             <div className="portfolio--section--img">
-              <img src={item.src} alt="Placeholder" style={{height : 224, width : 336}}/>
+              <img src={item.src} alt="Placeholder" style={{height : 224, width : '100%'}}/>
             </div>
             <div className="portfolio--section--card--content">
               <div>
