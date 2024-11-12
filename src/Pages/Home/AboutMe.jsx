@@ -2,7 +2,7 @@ export default function AboutMe() {
   return (
     <section id="AboutMe" className="about--section">
       <div className="about--section--img">
-        <img src="./img/about_me_img_graphic.png" alt="About Me" style={{borderWidth: 2, borderColor: 'blue', borderStyle : 'darkblue'}}/>
+        <img src="./img/about_me_img.png" alt="About Me" style={{borderWidth: 2, borderColor: 'blue', borderStyle : 'darkblue'}}/>
       </div>
       <div className="hero--section--content--box about--section--box">
         <div className="hero--section--content">
