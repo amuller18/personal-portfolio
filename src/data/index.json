@@ -27,6 +27,13 @@
   ],
   "portfolio": [
     {
+      "id": "4",
+      "src": "./img/trader_ranker.png",
+      "title": "Trader Ranker",
+      "description": "Advanced crypto backtesting and trader analysis platform designed to identify high-performing copytraders. Analyzes trading patterns, risk metrics, and performance data to help users find the most profitable traders to follow. Currently in development.",
+      "link": "In Progress"
+    },
+    {
       "id": "1",
       "src": "./img/tutormatch_ex.png",
       "title": "Tutor Match",

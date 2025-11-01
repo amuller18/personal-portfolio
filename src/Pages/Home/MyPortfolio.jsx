@@ -3,13 +3,16 @@ import data from "../../data/index.json";
 export default function MyPortfolio() {
 
   var handleClick =  (item) => {
-    if (item.link == 'View live site'){
+    if (item.link == 'In Progress'){
+      // Project is still in development, no link yet
+      return;
+    } else if (item.link == 'View live site'){
       window.location.href = 'https://tutormatch.us/';
     } else if (item.title == 'Scottybot'){
       window.location.href = 'https://github.com/amuller18/scottybot';
     } else
       window.location.href = 'https://github.com/amuller18/linkedIn-activity-farmer';
-      
+
     }
   
   return (
