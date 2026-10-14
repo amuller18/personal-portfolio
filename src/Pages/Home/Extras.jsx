@@ -43,8 +43,10 @@ export function Toolkit() {
             <Reveal key={group.group} className="toolkit__group" delay={i * 70}>
               <h3>{group.group}</h3>
               <ul>
-                {group.items.map((item) => (
-                  <li key={item}>{item}</li>
+                {group.items.map((item, j) => (
+                  <li key={item} style={{ "--i": j }}>
+                    {item}
+                  </li>
                 ))}
               </ul>
             </Reveal>
@@ -63,7 +65,7 @@ export function Contact() {
           Chapter {UNWRITTEN} is unwritten
         </Reveal>
         <Reveal as="h2" className="contact__title" delay={80}>
-          Let&apos;s write it together.
+          Let&apos;s write it <span className="shimmer">together.</span>
         </Reveal>
         <Reveal as="p" className="contact__blurb" delay={160}>
           Building in AI, data, or finance? I&apos;d love to hear about it.
