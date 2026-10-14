@@ -75,7 +75,6 @@ export default function HeroSection() {
                 {hero.rotating[wordIndex]}
               </span>
             </span>
-            <br />
             {hero.tail}
           </h1>
           <p className="hero__blurb">{hero.blurb}</p>

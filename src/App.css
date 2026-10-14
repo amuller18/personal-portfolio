@@ -583,8 +583,10 @@ button {
   font-weight: 700;
 }
 
+/* The rotating phrase always gets its own line so the headline never reflows. */
 .hero__rotator {
-  display: inline-block;
+  display: block;
+  white-space: nowrap;
   color: var(--accent);
 }
 
