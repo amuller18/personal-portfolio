@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSite } from "../../context/SiteContext";
 import { hero, profile } from "../../data/story";
 import { mulberry32 } from "../../lib/sim";
 import { usePrefersReducedMotion } from "../../hooks/useInView";
@@ -43,6 +44,7 @@ function buildLines() {
 export default function HeroSection() {
   const { noise, signal } = useMemo(buildLines, []);
   const reduced = usePrefersReducedMotion();
+  const { setMode } = useSite();
   const [wordIndex, setWordIndex] = useState(0);
 
   useEffect(() => {
@@ -91,6 +93,9 @@ export default function HeroSection() {
               Skip to TraderRanker
             </a>
           </div>
+          <button type="button" className="hero__quick" onClick={() => setMode("summary")}>
+            In a hurry? Get the 30-second version <span aria-hidden="true">→</span>
+          </button>
         </div>
         <div className="hero__portrait">
           <img src="./img/hero_img.png" alt="Alex Muller" />

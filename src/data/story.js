@@ -352,6 +352,76 @@ export const nextChapter = {
   ],
 };
 
+/* Stock-ticker tape of highlights shown between sections. */
+export const ticker = [
+  { sym: "ALEX", val: "AI ENG @ WOLFE", up: true },
+  { sym: "ANALYSTS", val: "6 SERVED", up: true },
+  { sym: "MANUAL WORK", val: "−4 HRS/WK", up: false },
+  { sym: "TRADERRANKER", val: "CALLERS RANKED", up: true },
+  { sym: "HUSTLE", val: "$10K+", up: true },
+  { sym: "TUTORMATCH", val: "30+ SESSIONS", up: true },
+  { sym: "SPREADSHEETS", val: "REPLACED", up: false },
+  { sym: "POWDER", val: "DAYS", up: true },
+  { sym: "UTAH", val: "CE '28", up: true },
+  { sym: "NOISE", val: "→ SIGNAL", up: true },
+];
+
+/* The 30-second version for busy readers. */
+export const summary = {
+  headline:
+    "I build data pipelines, LLM systems, and trading tools that turn messy data " +
+    "into decisions.",
+  stats: [
+    { value: "6", label: "Wall Street analysts served" },
+    { value: "4+ hrs", label: "of manual work saved weekly" },
+    { value: "30+", label: "TutorMatch sessions in 2 months" },
+    { value: "$10K+", label: "revenue from my high-school business" },
+  ],
+  highlights: [
+    {
+      tag: "Now · Wolfe Research",
+      title: "AI Engineering Intern",
+      body:
+        "Production scrapers and ELT pipelines for six equity analysts, an " +
+        "end-to-end compliance platform for enterprise LLM usage with MNPI and " +
+        "PII detection, and a firm-wide library of Claude Skills.",
+    },
+    {
+      tag: "Project · TraderRanker",
+      title: "Crypto caller rankings + copy trader",
+      body:
+        "ELT over paid market data, uniform backtests, exit-strategy parameter " +
+        "sweeps, an aggregate score, a React/TypeScript UI, and an on-chain " +
+        "copy trader.",
+    },
+    {
+      tag: "Building · Reseller tracker",
+      title: "P&L for collectibles reselling",
+      body:
+        "Pulls Gmail/IMAP, Plaid, eBay and Tradepost into one ledger for " +
+        "payments, spending, order history and profit and loss.",
+    },
+    {
+      tag: "Founded · TutorMatch",
+      title: "Peer-tutoring marketplace",
+      body:
+        "Co-founded and built with Stripe payments and automated SMS; 30+ " +
+        "sessions in its first two months.",
+    },
+  ],
+  skills: [
+    "Python",
+    "SQL",
+    "TypeScript",
+    "React",
+    "ELT pipelines",
+    "LLMs & RAG",
+    "Azure",
+    "AWS",
+    "Playwright",
+  ],
+};
+
 export const toolkit = [
   {
     group: "Languages",
