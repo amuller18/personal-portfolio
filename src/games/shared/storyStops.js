@@ -41,8 +41,8 @@ export function buildStoryStops(sections = storyOrder) {
       id: "finish",
       title: "Finish",
       headline:
-        "Thanks for riding along. If you're building something at the edge " +
-        "of data, AI, and finance, I'd love to hear about it.",
+        "If you're building something at the edge of data, AI, and finance, " +
+        "I'd love to hear about it.",
       links: [
         { label: "Email", href: `mailto:${profile.email}` },
         { label: "LinkedIn", href: profile.linkedin },

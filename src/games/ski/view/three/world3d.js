@@ -9,9 +9,9 @@ import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
 import { KICKER, LANDING } from "../../model/course";
 import { clamp, seededRandom, smoothRange } from "../../../shared/math";
+import { GATE_COLORS } from "../palette";
 
 const FONT = '"Press Start 2P", ui-monospace, monospace';
-const GATE_COLORS = ["#ff4d4d", "#2bd9a0", "#ffd23f", "#5ef0ff", "#c77dff", "#ff8a3d"];
 const LANE = 60;
 const POLE_Z = 85;
 

@@ -18,8 +18,8 @@ const SLOPE = { stop: 0.16, run: 0.52, landing: 0.64 };
 const SUMMIT = 950;
 const RUN_OUT = 1500;
 const STEP = 4;
-const TOP_FT = 11000;
-const BASE_FT = 7760;
+export const TOP_FT = 11000;
+export const BASE_FT = 7760;
 
 /*
  * Scroll progress within one run -> position along that run. The air gets

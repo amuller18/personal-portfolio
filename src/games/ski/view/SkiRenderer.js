@@ -9,6 +9,7 @@
 import { KICKER, LANDING } from "../model/course";
 import { clamp, clamp01, lerp, mixColor, seededRandom, smoothRange } from "../../shared/math";
 import drawSkier from "./drawSkier";
+import { GATE_COLORS } from "./palette";
 
 const FONT = '"Press Start 2P", ui-monospace, monospace';
 const FONT_SIZE = 8; // Press Start 2P is drawn on an 8px grid
@@ -25,7 +26,6 @@ const RANGES = [
   { seed: 23, parallax: 0.26, base: 0.82, height: 0.3, color: "#3b4f8c", haze: 0.1 },
 ];
 
-const GATE_COLORS = ["#ff4d4d", "#2bd9a0", "#ffd23f", "#5ef0ff", "#c77dff", "#ff8a3d"];
 const CONFETTI = ["#ff4d4d", "#ffd23f", "#2bd9a0", "#5ef0ff", "#c77dff", "#ffffff"];
 const MAX_PARTICLES = 420;
 const GRAVITY = 900;

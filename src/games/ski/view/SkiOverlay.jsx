@@ -5,18 +5,61 @@
  */
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { usePrefersReducedMotion } from "../../../hooks/useInView";
+import { BASE_FT, TOP_FT } from "../model/course";
+import { accentFor } from "./palette";
 
 const pad = (value, length = 6) => String(value).padStart(length, "0");
+const two = (value) => String(value).padStart(2, "0");
 const formatNumber = (value) => value.toLocaleString("en-US");
+
+/* Entrance order for staggered card sections. */
+const step = (i) => ({ "--i": i });
+
+/* Counts the numeric part of a value ("$10K+", "4+ hrs", 4850) up from zero. */
+function CountUp({ value, duration = 900, delay = 0, format = (n) => n }) {
+  const text = String(value);
+  const match = /^([^0-9]*)([\d,]+)(.*)$/.exec(text);
+  const hasNumber = Boolean(match);
+  const target = match ? Number(match[2].replace(/,/g, "")) : 0;
+  const reduced = usePrefersReducedMotion();
+  const [current, setCurrent] = useState(reduced ? target : 0);
+
+  useEffect(() => {
+    if (!hasNumber) return undefined;
+    if (reduced) {
+      setCurrent(target);
+      return undefined;
+    }
+    let frame = 0;
+    let start = 0;
+    const tick = (now) => {
+      if (!start) start = now + delay;
+      const t = Math.min(1, Math.max(0, (now - start) / duration));
+      setCurrent(Math.round(target * (1 - (1 - t) ** 3)));
+      if (t < 1) frame = window.requestAnimationFrame(tick);
+    };
+    frame = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(frame);
+  }, [hasNumber, target, reduced, duration, delay]);
+
+  if (!match) return <span>{text}</span>;
+  return (
+    <span aria-label={text}>
+      <span aria-hidden="true">
+        {match[1]}
+        {format(current)}
+        {match[3]}
+      </span>
+    </span>
+  );
+}
 
 function Hud({ snapshot, stops, jumps, onSelect }) {
   const lastStop = stops.length - 1;
   const checkpoints = lastStop - 1;
   const nearest = stops[snapshot.nearestStop];
-  const where =
-    nearest.kind === "chapter"
-      ? `CP ${nearest.number}/${String(checkpoints).padStart(2, "0")}`
-      : nearest.kind.toUpperCase();
+  const where = nearest.kind === "chapter" ? `CP ${nearest.number}/${two(checkpoints)}` : nearest.kind.toUpperCase();
   return (
     <header className="ski-hud">
       <div className="ski-hud__group">
@@ -101,33 +144,76 @@ function TrickCallout({ snapshot, jumps }) {
   return null;
 }
 
-function NextButton({ nextTrick, onNext, label }) {
+/* Full-width stripe that sweeps across the screen on arrival. */
+function ArrivalBanner({ snapshot, stops }) {
+  const stop = stops[snapshot.activeStop];
+  if (!stop || stop.kind !== "chapter") return null;
   return (
-    <button type="button" className="ski-btn ski-btn--primary" onClick={onNext}>
-      {label ?? "Next run"} ▶
-      {nextTrick && <span className="ski-btn__sub">Up next: {nextTrick.name}</span>}
+    <div className="ski-banner" key={stop.id} style={{ "--accent": accentFor(stop, snapshot.activeStop) }} aria-hidden="true">
+      <div className="ski-banner__stripe">
+        <span className="ski-banner__kicker">Checkpoint {stop.number}</span>
+        <strong className="ski-banner__title">{stop.title}</strong>
+      </div>
+    </div>
+  );
+}
+
+function Progress({ index, total }) {
+  return (
+    <div className="ski-progress ski-in" style={step(1)} aria-hidden="true">
+      {Array.from({ length: total }, (_, i) => (
+        <span key={i} className={i < index ? "is-done" : i === index ? "is-current" : ""} />
+      ))}
+    </div>
+  );
+}
+
+function NextButton({ nextTrick, onNext, label, i }) {
+  return (
+    <button type="button" className="ski-btn ski-btn--primary ski-in" style={step(i)} onClick={onNext}>
+      <span className="ski-btn__main">{label ?? "Next run"} ▶</span>
+      {nextTrick && <span className="ski-btn__sub">Next jump · {nextTrick.name}</span>}
     </button>
   );
 }
 
 function StartCard({ stop, nextTrick, onNext }) {
+  const [first, ...rest] = stop.title.split(" ");
   return (
     <>
-      <p className="ski-card__eyebrow">Player 1 · Ready</p>
-      <h1 className="ski-card__title ski-card__title--hero">{stop.title}</h1>
-      <p className="ski-card__subtitle">Ski the story</p>
-      <ul className="ski-card__lines">
+      <p className="ski-card__kicker ski-in" style={step(0)}>
+        <span className="ski-dot" /> Player 1 · Ready
+      </p>
+      <h1 className="ski-logo ski-in" style={step(1)}>
+        <span className="ski-logo__name">
+          {first}
+          <br />
+          {rest.join(" ")}
+        </span>
+        <span className="ski-logo__sub">Ski the story</span>
+      </h1>
+      <ul className="ski-card__roles ski-in" style={step(2)}>
         {stop.lines.map((line) => (
           <li key={line}>{line}</li>
         ))}
       </ul>
-      <p className="ski-card__body">{stop.headline}</p>
-      <div className="ski-card__actions">
-        <NextButton onNext={onNext} nextTrick={nextTrick} label="Drop in" />
-      </div>
-      <p className="ski-card__hint">
-        Scroll, swipe, or press <kbd>Space</kbd>
+      <p className="ski-card__body ski-in" style={step(3)}>
+        {stop.headline}
       </p>
+      <ul className="ski-legend ski-in" style={step(4)} aria-label="Controls">
+        <li>
+          <kbd>Scroll</kbd> ride
+        </li>
+        <li>
+          <kbd>Space</kbd> next jump
+        </li>
+        <li>
+          <kbd>◆</kbd> warp to chapter
+        </li>
+      </ul>
+      <div className="ski-card__actions">
+        <NextButton onNext={onNext} nextTrick={nextTrick} label="Drop in" i={5} />
+      </div>
     </>
   );
 }
@@ -135,86 +221,148 @@ function StartCard({ stop, nextTrick, onNext }) {
 function ChapterCard({ stop, index, checkpoints, nextTrick, onNext, onPrev }) {
   return (
     <>
-      <p className="ski-card__eyebrow">
-        Checkpoint {String(index).padStart(2, "0")}/{String(checkpoints).padStart(2, "0")}
-        <span className="ski-card__era">{stop.era}</span>
+      <header className="ski-card__head ski-in" style={step(0)}>
+        <span className="ski-card__num">{stop.number}</span>
+        <div className="ski-card__meta">
+          <span className="ski-card__kicker">
+            Checkpoint {two(index)} / {two(checkpoints)}
+          </span>
+          <span className="ski-card__era">{stop.era}</span>
+        </div>
+      </header>
+      <Progress index={index - 1} total={checkpoints} />
+      <h2 className="ski-card__title ski-in" style={step(2)}>
+        {stop.title}
+      </h2>
+      <p className="ski-card__headline ski-in" style={step(3)}>
+        {stop.headline}
       </p>
-      <h2 className="ski-card__title">{stop.title}</h2>
-      <p className="ski-card__headline">{stop.headline}</p>
-      {stop.summary && <p className="ski-card__body">{stop.summary}</p>}
+      {stop.summary && (
+        <p className="ski-card__body ski-in" style={step(4)}>
+          {stop.summary}
+        </p>
+      )}
       {stop.stats.length > 0 && (
-        <ul className="ski-card__loot">
-          {stop.stats.map((stat) => (
+        <ul className="ski-stats ski-in" style={step(5)}>
+          {stop.stats.map((stat, i) => (
             <li key={stat.label}>
-              <strong>{stat.value}</strong>
-              <span>{stat.label}</span>
+              <strong>
+                <CountUp value={stat.value} delay={450 + i * 120} />
+              </strong>
+              <span className="ski-stats__label">{stat.label}</span>
             </li>
           ))}
         </ul>
       )}
       {stop.bullets.length > 0 && (
-        <ul className="ski-card__quests">
-          {stop.bullets.map((bullet) => (
-            <li key={bullet}>{bullet}</li>
+        <ul className="ski-quests ski-in" style={step(5)}>
+          {stop.bullets.map((bullet, i) => (
+            <li key={bullet} style={{ "--q": i }}>
+              <span className="ski-quests__box" aria-hidden="true" />
+              {bullet}
+            </li>
           ))}
         </ul>
       )}
       {stop.lesson && (
-        <blockquote className="ski-card__lesson">
-          <span>★ Lesson unlocked</span>
-          <p>{stop.lesson}</p>
-        </blockquote>
+        <aside className="ski-achievement ski-in" style={step(6)}>
+          <span className="ski-achievement__icon" aria-hidden="true">
+            ★
+          </span>
+          <div>
+            <span className="ski-achievement__label">Lesson unlocked</span>
+            <p>{stop.lesson}</p>
+          </div>
+        </aside>
       )}
       <div className="ski-card__actions">
-        <button type="button" className="ski-btn" onClick={onPrev} aria-label="Back to the previous checkpoint">
+        <button
+          type="button"
+          className="ski-btn ski-btn--ghost ski-in"
+          style={step(7)}
+          onClick={onPrev}
+          aria-label="Back to the previous checkpoint"
+        >
           ◀
         </button>
-        <NextButton onNext={onNext} nextTrick={nextTrick} />
+        <NextButton onNext={onNext} nextTrick={nextTrick} i={7} />
       </div>
-      <a className="ski-card__more" href={stop.href}>
-        Read the full chapter ↗
+      <a className="ski-card__more ski-in" style={step(8)} href={stop.href}>
+        Read the full chapter →
       </a>
     </>
   );
 }
 
+function rankFor(score, best) {
+  const ratio = best > 0 ? score / best : 0;
+  if (ratio >= 1) return { letter: "S", note: "Perfect run" };
+  if (ratio >= 0.75) return { letter: "A", note: "Clean run" };
+  if (ratio >= 0.4) return { letter: "B", note: "Solid run" };
+  return { letter: "C", note: "Scenic route" };
+}
+
 function FinishCard({ stop, snapshot, jumps, onRestart, onPrev }) {
   const best = jumps.reduce((total, jump) => total + jump.trick.points, 0);
+  const rank = rankFor(snapshot.score, best);
   return (
     <>
-      <p className="ski-card__eyebrow">Course complete</p>
-      <h2 className="ski-card__title ski-card__title--hero">Finish!</h2>
-      <dl className="ski-card__results">
-        <div>
-          <dt>Final score</dt>
-          <dd>{pad(snapshot.score)}</dd>
+      <p className="ski-card__kicker ski-in" style={step(0)}>
+        <span className="ski-dot ski-dot--gold" /> Course complete
+      </p>
+      <div className="ski-results ski-in" style={step(1)}>
+        <div className="ski-rank" aria-label={`Rank ${rank.letter}: ${rank.note}`}>
+          <span className="ski-rank__letter">{rank.letter}</span>
+          <span className="ski-rank__note">{rank.note}</span>
         </div>
-        <div>
-          <dt>Tricks landed</dt>
-          <dd>
-            {snapshot.landedCount}/{jumps.length}
-          </dd>
-        </div>
-      </dl>
-      {snapshot.score === best && <p className="ski-card__badge">★ Perfect run ★</p>}
-      <p className="ski-card__body">{stop.headline}</p>
-      <div className="ski-card__links">
+        <dl className="ski-results__stats">
+          <div>
+            <dt>Final score</dt>
+            <dd>
+              <CountUp value={snapshot.score} duration={1400} delay={300} format={(n) => pad(n)} />
+            </dd>
+          </div>
+          <div>
+            <dt>Tricks landed</dt>
+            <dd>
+              {snapshot.landedCount}/{jumps.length}
+            </dd>
+          </div>
+          <div>
+            <dt>Vertical</dt>
+            <dd>{formatNumber(TOP_FT - BASE_FT)}&apos;</dd>
+          </div>
+        </dl>
+      </div>
+      <h2 className="ski-card__title ski-in" style={step(2)}>
+        Thanks for riding along.
+      </h2>
+      <p className="ski-card__body ski-in" style={step(3)}>
+        {stop.headline}
+      </p>
+      <div className="ski-links ski-in" style={step(4)}>
         {stop.links.map((link) => (
           <a key={link.label} className="ski-btn ski-btn--small" href={link.href} target="_blank" rel="noreferrer">
-            {link.label}
+            {link.label} ↗
           </a>
         ))}
       </div>
       <div className="ski-card__actions">
-        <button type="button" className="ski-btn" onClick={onPrev} aria-label="Back to the previous checkpoint">
+        <button
+          type="button"
+          className="ski-btn ski-btn--ghost ski-in"
+          style={step(5)}
+          onClick={onPrev}
+          aria-label="Back to the previous checkpoint"
+        >
           ◀
         </button>
-        <button type="button" className="ski-btn ski-btn--primary" onClick={onRestart}>
-          ↻ Ride again
+        <button type="button" className="ski-btn ski-btn--primary ski-in" style={step(5)} onClick={onRestart}>
+          <span className="ski-btn__main">↻ Ride again</span>
         </button>
       </div>
-      <Link className="ski-card__more" to="/">
-        Back to the classic site ↗
+      <Link className="ski-card__more ski-in" style={step(6)} to="/">
+        Back to the classic site →
       </Link>
     </>
   );
@@ -241,6 +389,7 @@ function StopCard({ snapshot, stops, jumps, controller }) {
     <section
       key={stop.id}
       className={`ski-card ski-card--${stop.kind} ${leaving ? "is-leaving" : ""}`}
+      style={{ "--accent": accentFor(stop, index) }}
       aria-label={stop.kind === "chapter" ? `Chapter ${stop.number}: ${stop.title}` : stop.title}
       aria-hidden={leaving}
     >
@@ -256,13 +405,7 @@ function StopCard({ snapshot, stops, jumps, controller }) {
         />
       )}
       {stop.kind === "finish" && (
-        <FinishCard
-          stop={stop}
-          snapshot={snapshot}
-          jumps={jumps}
-          onRestart={controller.restart}
-          onPrev={controller.prev}
-        />
+        <FinishCard stop={stop} snapshot={snapshot} jumps={jumps} onRestart={controller.restart} onPrev={controller.prev} />
       )}
     </section>
   );
@@ -275,6 +418,7 @@ export default function SkiOverlay({ snapshot, course, controller }) {
     <div className="ski-overlay">
       <Hud snapshot={snapshot} stops={stops} jumps={jumps} onSelect={controller.goTo} />
       <TrickCallout snapshot={snapshot} jumps={jumps} />
+      <ArrivalBanner snapshot={snapshot} stops={stops} />
       <StopCard snapshot={snapshot} stops={stops} jumps={jumps} controller={controller} />
       <div className="ski-pad" aria-label="Ride controls">
         <button type="button" className="ski-btn ski-btn--icon" onClick={controller.prev} aria-label="Previous checkpoint">
