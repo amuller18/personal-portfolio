@@ -7,7 +7,8 @@
  *
  * A model needs: stopCount, target, setTarget(p), teleport(p), step(dt),
  * frame, getSnapshot() (with a `phaseKey` string for discrete changes) and
- * reducedMotion. A renderer needs: resize(), render(frame, dt), reducedMotion.
+ * reducedMotion. A renderer needs: resize(), render(frame, dt), reducedMotion,
+ * and optionally dispose().
  */
 import { clamp, shallowEqual } from "./math";
 
@@ -92,6 +93,7 @@ export default class ScrollStoryController {
     window.clearTimeout(this.pendingTimer);
     this.frameId = 0;
     this.pending = null;
+    if (this.renderer && this.renderer.dispose) this.renderer.dispose();
     this.renderer = null;
     this.track = null;
   }

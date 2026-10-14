@@ -51,6 +51,7 @@ function buildRange(seed, knots = 24) {
 export default class SkiRenderer {
   constructor(canvas, course) {
     this.canvas = canvas;
+    this.canvas.classList.add("is-pixel");
     this.ctx = canvas.getContext("2d");
     this.course = course;
     this.reducedMotion = false;
@@ -96,6 +97,11 @@ export default class SkiRenderer {
       fall: 8 + this.flakeRand() * 22,
       phase: this.flakeRand() * Math.PI * 2,
     }));
+  }
+
+  dispose() {
+    this.canvas.classList.remove("is-pixel");
+    this.particles = [];
   }
 
   /* ---------- Coordinates ---------- */

@@ -3,7 +3,8 @@
  * to a view (canvas + overlay) and the shared scroll controller.
  *
  *   model       model/course.js, model/tricks.js, model/SkiModel.js
- *   view        view/SkiRenderer.js, view/drawSkier.js, view/SkiOverlay.jsx
+ *   view        view/three/* (3D, default) or view/SkiRenderer.js (2D pixel
+ *               art, ?view=2d or when WebGL is unavailable), view/SkiOverlay.jsx
  *   controller  ../shared/ScrollStoryController.js
  */
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
@@ -14,7 +15,22 @@ import { createCourse } from "./model/course";
 import SkiModel from "./model/SkiModel";
 import SkiOverlay from "./view/SkiOverlay";
 import SkiRenderer from "./view/SkiRenderer";
+import SkiRenderer3D from "./view/three/SkiRenderer3D";
 import "./view/ski.css";
+
+/* Views are interchangeable: both read the same model frames. */
+function createRenderer(canvas, course) {
+  const wants2d = new URLSearchParams(window.location.search).get("view") === "2d";
+  if (!wants2d) {
+    try {
+      return new SkiRenderer3D(canvas, course);
+    } catch (error) {
+      // No WebGL context was created, so the same canvas can still go 2D.
+      return new SkiRenderer(canvas, course);
+    }
+  }
+  return new SkiRenderer(canvas, course);
+}
 
 function createGame() {
   const course = createCourse(buildStoryStops());
@@ -35,7 +51,7 @@ export default function SkiGame() {
     const previousTitle = document.title;
     root.classList.add("ski-mode");
     document.title = "Alex Muller · Ski the story";
-    const renderer = new SkiRenderer(canvasRef.current, course);
+    const renderer = createRenderer(canvasRef.current, course);
     controller.attach({ track: trackRef.current, renderer });
     return () => {
       controller.detach();
