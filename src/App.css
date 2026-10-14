@@ -533,12 +533,13 @@ button {
 
 .hero__signal {
   fill: none;
-  stroke: var(--accent);
+  /* Deeper than --accent so it sits behind the accent-colored headline. */
+  stroke: #2f8a6a;
   stroke-width: 2.5;
   vector-effect: non-scaling-stroke;
   stroke-dasharray: 1;
   stroke-dashoffset: 1;
-  filter: drop-shadow(0 0 8px rgba(124, 242, 196, 0.6));
+  filter: drop-shadow(0 0 6px rgba(47, 138, 106, 0.45));
   animation: draw 3.2s 0.4s cubic-bezier(0.6, 0, 0.2, 1) forwards;
 }
 
@@ -1692,7 +1693,7 @@ button {
 
 .quests {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
 }
 
