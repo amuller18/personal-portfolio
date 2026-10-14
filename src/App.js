@@ -4,19 +4,27 @@ import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Navbar from "./Pages/Home/Navbar";
 import Home from "./Pages/Home/Homescreen";
 
+function NotFound() {
+  return (
+    <main className="not-found">
+      <p className="eyebrow">404</p>
+      <h1>This chapter doesn&apos;t exist.</h1>
+      <a className="btn btn--primary" href="/">
+        Back to the story
+      </a>
+    </main>
+  );
+}
+
 function App() {
   return (
-    <div className="MyPortfolio">
-      <Router>
-        <div>
-          <Navbar />
-          <Routes>
-            <Route path="/" element={<Home />}></Route>
-            <Route path="*" element={<div>404 Not Found</div>}></Route>
-          </Routes>
-        </div>
-      </Router>
-    </div>
+    <Router>
+      <Navbar />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Router>
   );
 }
 
