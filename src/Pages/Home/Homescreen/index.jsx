@@ -2,7 +2,7 @@ import { storyOrder } from "../../../data/story";
 import Chapter from "../Chapter";
 import ChapterRail from "../ChapterRail";
 import CurrentWork from "../CurrentWork";
-import { Contact, SideQuests, Toolkit } from "../Extras";
+import { Contact, Toolkit } from "../Extras";
 import HeroSection from "../HeroSection";
 import Interlude from "../Interlude";
 import NextChapter from "../NextChapter";
@@ -34,7 +34,6 @@ export default function Home() {
             <Chapter key={section.id} chapter={section} />
           );
         })}
-        <SideQuests />
         <Toolkit />
       </main>
       <Contact />

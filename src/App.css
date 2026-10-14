@@ -2326,66 +2326,6 @@ button {
   margin-bottom: 40px;
 }
 
-.quests {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-}
-
-.quest {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  text-decoration: none;
-  border-radius: var(--radius);
-  border: 1px solid var(--line);
-  background: var(--surface);
-  overflow: hidden;
-  transition:
-    border-color 0.25s,
-    transform 0.25s;
-}
-
-.quest:hover {
-  border-color: rgba(124, 242, 196, 0.4);
-  transform: translateY(-4px);
-}
-
-.quest__img {
-  aspect-ratio: 16 / 9;
-  overflow: hidden;
-  background: var(--surface-2);
-}
-
-.quest__img img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.5s;
-}
-
-.quest:hover .quest__img img {
-  transform: scale(1.05);
-}
-
-.quest__body {
-  padding: 20px 22px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  flex: 1;
-}
-
-.quest__body h3 {
-  font-size: 20px;
-}
-
-.quest__body p {
-  color: var(--text-2);
-  font-size: 15px;
-  flex: 1;
-}
-
 .toolkit {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -2555,8 +2495,7 @@ button {
   .chapter__grid,
   .versus,
   .work-grid,
-  .goals,
-  .quests {
+  .goals {
     grid-template-columns: minmax(0, 1fr);
   }
 

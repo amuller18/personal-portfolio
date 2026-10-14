@@ -1,35 +1,7 @@
-import { profile, sideQuests, storyOrder, toolkit } from "../../data/story";
+import { profile, storyOrder, toolkit } from "../../data/story";
 import Reveal from "./Reveal";
 
 const UNWRITTEN = String(storyOrder.length + 1).padStart(2, "0");
-
-export function SideQuests() {
-  return (
-    <section id="projects" className="section">
-      <div className="container">
-        <Reveal as="h2" className="section__title">
-          Side quests
-        </Reveal>
-        <div className="quests">
-          {sideQuests.map((quest, i) => (
-            <Reveal key={quest.title} delay={i * 90}>
-              <a className="quest" href={quest.href} target="_blank" rel="noreferrer">
-                <div className="quest__img">
-                  <img src={quest.img} alt="" loading="lazy" />
-                </div>
-                <div className="quest__body">
-                  <h3>{quest.title}</h3>
-                  <p>{quest.body}</p>
-                  <span className="text-link">{quest.cta} ↗</span>
-                </div>
-              </a>
-            </Reveal>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
 
 export function Toolkit() {
   return (
