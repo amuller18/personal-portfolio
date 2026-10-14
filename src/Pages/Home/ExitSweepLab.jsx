@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   SL_LEVELS,
   STEPS,
@@ -24,14 +24,36 @@ function cellColor(value, maxAbs) {
   return mix(NEUTRAL, value >= 0 ? GAIN : LOSS, t);
 }
 
-const pct = (v, digits = 1) => `${v > 0 ? "+" : ""}${(v * 100).toFixed(digits)}%`;
+function pct(v, digits = 1) {
+  const fixed = (v * 100).toFixed(digits);
+  if (Number(fixed) === 0) return `${(0).toFixed(digits)}%`;
+  return `${v > 0 ? "+" : ""}${fixed}%`;
+}
 
-const CHART_W = 560;
-const CHART_H = 220;
+const CHART_H = 240;
 const PAD = { top: 12, right: 12, bottom: 24, left: 44 };
+
+/* Tracks an element's width so the SVG draws at 1:1 and labels stay legible. */
+function useWidth(fallback) {
+  const ref = useRef(null);
+  const [width, setWidth] = useState(fallback);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node || typeof ResizeObserver === "undefined") return undefined;
+    const observer = new ResizeObserver(([entry]) => {
+      setWidth(Math.max(280, Math.round(entry.contentRect.width)));
+    });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  return [ref, width];
+}
 
 function TradeChart({ path, tp, sl, handle, index, total }) {
   const [hoverStep, setHoverStep] = useState(null);
+  const [plotRef, CHART_W] = useWidth(720);
   const result = backtest(path, tp, sl);
 
   const visible = Array.from(path);
@@ -45,7 +67,9 @@ function TradeChart({ path, tp, sl, handle, index, total }) {
   const held = visible.slice(0, result.exitAt + 1);
   const after = visible.slice(result.exitAt);
   const line = (points, offset) =>
-    points.map((p, i) => `${i ? "L" : "M"}${x(i + offset).toFixed(1)},${y(p).toFixed(1)}`).join(" ");
+    points
+      .map((p, i) => `${i ? "L" : "M"}${x(i + offset).toFixed(1)},${y(p).toFixed(1)}`)
+      .join(" ");
 
   const onMove = (e) => {
     const box = e.currentTarget.getBoundingClientRect();
@@ -70,7 +94,7 @@ function TradeChart({ path, tp, sl, handle, index, total }) {
           {exitLabel} · {pct(result.ret)}
         </span>
       </figcaption>
-      <div className="trade__plot">
+      <div className="trade__plot" ref={plotRef}>
         <svg
           viewBox={`0 0 ${CHART_W} ${CHART_H}`}
           role="img"
@@ -114,10 +138,7 @@ function TradeChart({ path, tp, sl, handle, index, total }) {
           )}
         </svg>
         {hoverStep !== null && (
-          <div
-            className="trade__tooltip"
-            style={{ left: `${(x(hoverStep) / CHART_W) * 100}%` }}
-          >
+          <div className="trade__tooltip" style={{ left: `${(x(hoverStep) / CHART_W) * 100}%` }}>
             <strong>{pct(path[hoverStep] - 1)}</strong>
             <span>hour {hoverStep}</span>
           </div>
@@ -141,7 +162,7 @@ export default function ExitSweepLab() {
   const shown = hovered || selected;
   const leaderboard = useMemo(
     () => rankCallers(dataset, selected.tp, selected.sl),
-    [dataset, selected]
+    [dataset, selected],
   );
   const activeHandle = callerHandle || leaderboard[0].handle;
   const caller = dataset.find((c) => c.handle === activeHandle);
@@ -159,8 +180,8 @@ export default function ExitSweepLab() {
           <p className="eyebrow">Try it yourself</p>
           <h3>The exit-strategy sweep, in miniature</h3>
           <p className="muted">
-            Every cell replays all {best.trades} calls with one take-profit / stop-loss pair.
-            Click a cell to re-rank the callers under that strategy.
+            Every cell replays all {best.trades} calls with one take-profit / stop-loss pair. Click
+            a cell to re-rank the callers under that strategy.
           </p>
         </div>
         <span className="badge">Simulated data · not real results</span>
@@ -196,7 +217,7 @@ export default function ExitSweepLab() {
                           style={{ background: cellColor(cell.avg, maxAbs) }}
                           aria-pressed={isSel}
                           aria-label={`Take-profit ${Math.round(cell.tp * 100)}%, stop-loss ${Math.round(
-                            cell.sl * 100
+                            cell.sl * 100,
                           )}%: average ${pct(cell.avg)} per trade${isBest ? ", best" : ""}`}
                           onClick={() => setSelected(cell)}
                           onMouseEnter={() => setHovered(cell)}
@@ -230,7 +251,9 @@ export default function ExitSweepLab() {
             </div>
             <div>
               <span className="readout__k">Avg / trade</span>
-              <span className={`readout__v ${shown.avg >= 0 ? "pos" : "neg"}`}>{pct(shown.avg)}</span>
+              <span className={`readout__v ${shown.avg >= 0 ? "pos" : "neg"}`}>
+                {pct(shown.avg)}
+              </span>
             </div>
             <div>
               <span className="readout__k">Win rate</span>
@@ -238,46 +261,55 @@ export default function ExitSweepLab() {
             </div>
           </div>
 
-          <table className="board">
-            <caption>Leaderboard under the selected strategy</caption>
-            <thead>
-              <tr>
-                <th scope="col">#</th>
-                <th scope="col">Caller</th>
-                <th scope="col">Score</th>
-                <th scope="col" className="num">Win</th>
-                <th scope="col" className="num">Avg</th>
-                <th scope="col" className="num">Calls</th>
-              </tr>
-            </thead>
-            <tbody>
-              {leaderboard.map((row, i) => (
-                <tr
-                  key={row.handle}
-                  className={row.handle === activeHandle ? "is-active" : ""}
-                >
-                  <td>{i + 1}</td>
-                  <td>
-                    <button type="button" className="board__caller" onClick={() => pickCaller(row.handle)}>
-                      {row.handle}
-                    </button>
-                  </td>
-                  <td>
-                    <div className="board__score">
-                      <span className="board__bar" style={{ width: `${row.score}%` }} />
-                      <span>{row.score}</span>
-                    </div>
-                  </td>
-                  <td className="num">{Math.round(row.winRate * 100)}%</td>
-                  <td className={`num ${row.avg >= 0 ? "pos" : "neg"}`}>{pct(row.avg, 0)}</td>
-                  <td className="num">{row.calls}</td>
+          <div className="board__wrap">
+            <table className="board">
+              <caption>Leaderboard under the selected strategy</caption>
+              <thead>
+                <tr>
+                  <th scope="col">#</th>
+                  <th scope="col">Caller</th>
+                  <th scope="col">Score</th>
+                  <th scope="col" className="num">
+                    Win
+                  </th>
+                  <th scope="col" className="num">
+                    Avg
+                  </th>
+                  <th scope="col" className="num">
+                    Calls
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {leaderboard.map((row, i) => (
+                  <tr key={row.handle} className={row.handle === activeHandle ? "is-active" : ""}>
+                    <td>{i + 1}</td>
+                    <td>
+                      <button
+                        type="button"
+                        className="board__caller"
+                        onClick={() => pickCaller(row.handle)}
+                      >
+                        {row.handle}
+                      </button>
+                    </td>
+                    <td>
+                      <div className="board__score">
+                        <span className="board__bar" style={{ width: `${row.score}%` }} />
+                        <span>{row.score}</span>
+                      </div>
+                    </td>
+                    <td className="num">{Math.round(row.winRate * 100)}%</td>
+                    <td className={`num ${row.avg >= 0 ? "pos" : "neg"}`}>{pct(row.avg, 0)}</td>
+                    <td className="num">{row.calls}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
           <p className="muted small">
-            Score = average percentile across win rate, mean, median, worst trade and profit
-            factor, discounted for callers with fewer than 30 calls.
+            Score = average percentile across win rate, mean, median, worst trade and profit factor,
+            discounted for callers with fewer than 30 calls.
           </p>
         </div>
       </div>
@@ -295,7 +327,9 @@ export default function ExitSweepLab() {
           <button
             type="button"
             className="btn btn--ghost btn--sm"
-            onClick={() => setTradeIndex((i) => (i - 1 + caller.paths.length) % caller.paths.length)}
+            onClick={() =>
+              setTradeIndex((i) => (i - 1 + caller.paths.length) % caller.paths.length)
+            }
           >
             ← Prev call
           </button>

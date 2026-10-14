@@ -16,12 +16,7 @@ export const profile = {
 export const hero = {
   kicker: "Hi, I'm Alex.",
   lead: "I build",
-  rotating: [
-    "data pipelines",
-    "LLM systems",
-    "trading engines",
-    "scrapers that never sleep",
-  ],
+  rotating: ["data pipelines", "LLM systems", "trading engines", "scrapers that never sleep"],
   tail: "that turn noise into signal.",
   blurb:
     "Every project I've loved has started the same way: a pile of messy, " +
@@ -222,7 +217,7 @@ export const wallStreet = {
   stats: [
     { value: "6", label: "top equity analysts served" },
     { value: "4+ hrs", label: "of manual work saved weekly" },
-    { value: "6", label: "sectors: rail, energy, consumer, healthcare, telecom, macro" },
+    { value: "6", label: "coverage sectors, from rail to macro" },
   ],
   work: [
     {
@@ -261,8 +256,7 @@ export const wallStreet = {
         "production tools with Claude Code, reviewed and deployed by me.",
     },
   ],
-  lesson:
-    "The best AI systems are mostly great data systems with a model on top.",
+  lesson: "The best AI systems are mostly great data systems with a model on top.",
 };
 
 export const nextChapter = {
@@ -359,15 +353,7 @@ export const toolkit = [
   },
   {
     group: "Cloud & infra",
-    items: [
-      "Azure AI Search",
-      "Azure SQL",
-      "Key Vault",
-      "AWS S3",
-      "AWS Lambda",
-      "CI/CD",
-      "RBAC",
-    ],
+    items: ["Azure AI Search", "Azure SQL", "Key Vault", "AWS S3", "AWS Lambda", "CI/CD", "RBAC"],
   },
   {
     group: "Product",

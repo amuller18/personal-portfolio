@@ -61,9 +61,7 @@ export function generateDataset(seed = 18) {
   const rand = mulberry32(seed);
   return CALLERS.map((caller) => ({
     ...caller,
-    paths: Array.from({ length: caller.calls }, () =>
-      generatePath(rand, caller)
-    ),
+    paths: Array.from({ length: caller.calls }, () => generatePath(rand, caller)),
   }));
 }
 
@@ -92,7 +90,7 @@ export function sweep(dataset) {
   SL_LEVELS.forEach((sl, row) => {
     TP_LEVELS.forEach((tp, col) => {
       const returns = dataset.flatMap((caller) =>
-        caller.paths.map((path) => backtest(path, tp, sl).ret)
+        caller.paths.map((path) => backtest(path, tp, sl).ret),
       );
       cells.push({
         row,
@@ -110,9 +108,7 @@ export function sweep(dataset) {
 
 function percentileRanks(values, higherIsBetter = true) {
   return values.map((v) => {
-    const beaten = values.filter((other) =>
-      higherIsBetter ? other < v : other > v
-    ).length;
+    const beaten = values.filter((other) => (higherIsBetter ? other < v : other > v)).length;
     return values.length > 1 ? beaten / (values.length - 1) : 1;
   });
 }

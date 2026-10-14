@@ -33,7 +33,12 @@ export default function CopyTraderTerminal() {
   }, [inView, reduced]);
 
   return (
-    <div ref={ref} className="terminal" role="img" aria-label="Illustration of the copy trader's decision log">
+    <div
+      ref={ref}
+      className="terminal"
+      role="img"
+      aria-label="Illustration of the copy trader's decision log"
+    >
       <div className="terminal__bar">
         <span />
         <span />

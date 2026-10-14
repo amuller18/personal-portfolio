@@ -12,7 +12,7 @@ export default function ChapterRail({ items }) {
           if (entry.isIntersecting) setActive(entry.target.id);
         });
       },
-      { rootMargin: "-45% 0px -50% 0px" }
+      { rootMargin: "-45% 0px -50% 0px" },
     );
     items.forEach((item) => {
       const node = document.getElementById(item.id);

@@ -26,7 +26,7 @@ function buildLines() {
         v += (rand() - 0.5) * 22;
         v = Math.max(-170, Math.min(170, v));
         return v;
-      })
+      }),
     );
   });
 
@@ -35,7 +35,7 @@ function buildLines() {
     Array.from({ length: POINTS }, (_, i) => {
       s += 2.4 + (rand() - 0.5) * 10;
       return Math.min(150, s + Math.sin(i / 6) * 6);
-    })
+    }),
   );
   return { noise, signal };
 }
@@ -47,10 +47,7 @@ export default function HeroSection() {
 
   useEffect(() => {
     if (reduced) return undefined;
-    const id = window.setInterval(
-      () => setWordIndex((i) => (i + 1) % hero.rotating.length),
-      2400
-    );
+    const id = window.setInterval(() => setWordIndex((i) => (i + 1) % hero.rotating.length), 2400);
     return () => window.clearInterval(id);
   }, [reduced]);
 

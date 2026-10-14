@@ -24,7 +24,7 @@ export default function useInView({ threshold = 0.2, once = true } = {}) {
           setInView(false);
         }
       },
-      { threshold }
+      { threshold },
     );
     observer.observe(node);
     return () => observer.disconnect();
@@ -36,7 +36,7 @@ export default function useInView({ threshold = 0.2, once = true } = {}) {
 export function usePrefersReducedMotion() {
   const query = "(prefers-reduced-motion: reduce)";
   const [reduced, setReduced] = useState(
-    () => typeof window !== "undefined" && window.matchMedia?.(query).matches
+    () => typeof window !== "undefined" && window.matchMedia?.(query).matches,
   );
 
   useEffect(() => {

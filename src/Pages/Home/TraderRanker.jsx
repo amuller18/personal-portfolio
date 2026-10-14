@@ -115,9 +115,9 @@ export default function TraderRanker() {
             <p className="eyebrow">Closing the loop</p>
             <h3>Then I let the rankings trade.</h3>
             <p>
-              Research is only worth something if you act on it. The on-chain copy trader
-              watches for new calls, checks the caller&apos;s score, and executes with the
-              exit strategy the sweep picked, with no human in the loop.
+              Research is only worth something if you act on it. The on-chain copy trader watches
+              for new calls, checks the caller&apos;s score, and executes with the exit strategy the
+              sweep picked, with no human in the loop.
             </p>
           </Reveal>
           <Reveal delay={120}>
