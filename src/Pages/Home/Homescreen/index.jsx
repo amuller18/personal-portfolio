@@ -1,6 +1,7 @@
 import { storyOrder } from "../../../data/story";
 import Chapter from "../Chapter";
 import ChapterRail from "../ChapterRail";
+import CurrentWork from "../CurrentWork";
 import { Contact, SideQuests, Toolkit } from "../Extras";
 import HeroSection from "../HeroSection";
 import Interlude from "../Interlude";
@@ -14,6 +15,7 @@ const CUSTOM = {
   offline: Interlude,
   traderranker: TraderRanker,
   wolfe: WallStreet,
+  now: CurrentWork,
   next: NextChapter,
 };
 

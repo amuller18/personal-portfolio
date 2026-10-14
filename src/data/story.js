@@ -287,6 +287,34 @@ export const wallStreet = {
   lesson: "The best AI systems are mostly great data systems with a model on top.",
 };
 
+export const currentWork = {
+  id: "now",
+  era: "Right now",
+  title: "Full circle",
+  headline: "I'm reselling again. This time, I'm building the software I always wished I had.",
+  body: [
+    "The hustle from chapter one never really left. I resell limited-edition " +
+      "collectibles, and the hardest part isn't finding the deals. It's " +
+      "knowing whether you're actually making money once every payment, " +
+      "card charge, fee, and sale is spread across a dozen inboxes and apps.",
+    "So I'm building a tracker that pulls all of it together automatically: " +
+      "payments, spending, order history, and real profit and loss, in one " +
+      "place, with no spreadsheets.",
+  ],
+  badge: "In progress",
+  sources: [
+    { name: "Gmail / IMAP", detail: "Order confirmations & receipts" },
+    { name: "Plaid", detail: "Bank & card transactions" },
+    { name: "eBay", detail: "Sales, fees & payouts" },
+    { name: "Tradepost", detail: "Sales & payouts" },
+  ],
+  hub: { name: "One ledger", detail: "Every purchase matched to every sale" },
+  outputs: ["Payments", "Spending", "Order history", "P&L"],
+  lesson:
+    "The best products start as tools you build for yourself, for a problem " +
+    "you know better than anyone.",
+};
+
 export const nextChapter = {
   id: "next",
   era: "What's next",
@@ -392,6 +420,7 @@ export const storyOrder = [
   chapters[2],
   traderRanker,
   wallStreet,
+  currentWork,
   nextChapter,
 ];
 
