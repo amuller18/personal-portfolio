@@ -339,13 +339,6 @@ export const sideQuests = [
     href: "https://github.com/amuller18/scottybot",
     cta: "GitHub",
   },
-  {
-    title: "LinkedIn Activity Script",
-    body: "Selenium bot that writes relevant comments using BERT and the ChatGPT API.",
-    img: "./img/linkedIn_img.jpg",
-    href: "https://github.com/amuller18/linkedIn-activity-farmer",
-    cta: "GitHub",
-  },
 ];
 
 export const toolkit = [
