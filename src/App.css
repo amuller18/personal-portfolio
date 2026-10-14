@@ -354,6 +354,153 @@ button {
   }
 }
 
+/* ---------- Next-chapter button ---------- */
+.next-btn {
+  position: fixed;
+  right: clamp(16px, 3vw, 32px);
+  bottom: clamp(16px, 3vw, 32px);
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 8px 8px 20px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  background: rgba(22, 25, 31, 0.78);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  box-shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.9);
+  color: var(--text);
+  text-decoration: none;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(32px) scale(0.9);
+  transition:
+    opacity 0.35s ease,
+    transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1),
+    background-color 0.25s,
+    border-color 0.25s,
+    box-shadow 0.25s,
+    color 0.25s;
+}
+
+.next-btn.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+  animation: next-float 3.2s ease-in-out 0.6s infinite;
+}
+
+@keyframes next-float {
+  50% {
+    translate: 0 -6px;
+  }
+}
+
+.next-btn:hover,
+.next-btn:focus-visible {
+  animation-play-state: paused;
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  box-shadow:
+    0 0 0 6px var(--accent-soft),
+    0 20px 50px -12px rgba(124, 242, 196, 0.55);
+  outline: none;
+}
+
+.next-btn__text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+  animation: word-in 0.45s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+.next-btn__kicker {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  transition: color 0.25s;
+}
+
+.next-btn:hover .next-btn__kicker,
+.next-btn:focus-visible .next-btn__kicker {
+  color: var(--accent-ink);
+  opacity: 0.75;
+}
+
+.next-btn__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+.next-btn__arrow {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--accent-soft);
+  color: var(--accent);
+  transition:
+    background-color 0.25s,
+    color 0.25s;
+}
+
+.next-btn__arrow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  animation: next-ping 2.4s ease-out infinite;
+}
+
+@keyframes next-ping {
+  0% {
+    transform: scale(1);
+    opacity: 0.7;
+  }
+  70%,
+  100% {
+    transform: scale(1.6);
+    opacity: 0;
+  }
+}
+
+.next-btn__arrow svg {
+  width: 18px;
+  height: 18px;
+}
+
+.next-btn:hover .next-btn__arrow,
+.next-btn:focus-visible .next-btn__arrow {
+  background: var(--accent-ink);
+  color: var(--accent);
+}
+
+.next-btn:hover .next-btn__arrow::after,
+.next-btn:focus-visible .next-btn__arrow::after {
+  animation: none;
+  opacity: 0;
+}
+
+.next-btn:hover .next-btn__arrow svg,
+.next-btn:focus-visible .next-btn__arrow svg {
+  animation: next-nudge 0.9s ease-in-out infinite;
+}
+
+@keyframes next-nudge {
+  50% {
+    transform: translateY(4px);
+  }
+}
+
 /* ---------- Hero ---------- */
 .hero {
   position: relative;
@@ -436,8 +583,10 @@ button {
   font-weight: 700;
 }
 
+/* The rotating phrase always gets its own line so the headline never reflows. */
 .hero__rotator {
-  display: inline-block;
+  display: block;
+  white-space: nowrap;
   color: var(--accent);
 }
 
@@ -1774,6 +1923,20 @@ button {
 @media (max-width: 520px) {
   body {
     font-size: 16px;
+  }
+
+  .next-btn {
+    padding: 6px 6px 6px 16px;
+    gap: 10px;
+  }
+
+  .next-btn__title {
+    font-size: 14px;
+  }
+
+  .next-btn__arrow {
+    width: 34px;
+    height: 34px;
   }
 
   .heat__axis-x,

@@ -1,5 +1,7 @@
-import { profile, sideQuests, toolkit } from "../../data/story";
+import { profile, sideQuests, storyOrder, toolkit } from "../../data/story";
 import Reveal from "./Reveal";
+
+const UNWRITTEN = String(storyOrder.length + 1).padStart(2, "0");
 
 export function SideQuests() {
   return (
@@ -58,7 +60,7 @@ export function Contact() {
     <footer id="contact" className="contact">
       <div className="container">
         <Reveal as="p" className="eyebrow">
-          Chapter 07 is unwritten
+          Chapter {UNWRITTEN} is unwritten
         </Reveal>
         <Reveal as="h2" className="contact__title" delay={80}>
           Let&apos;s write it together.
