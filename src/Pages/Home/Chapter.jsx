@@ -1,10 +1,10 @@
 import Reveal from "./Reveal";
 
-export function ChapterHeader({ number, label, era, title, headline }) {
+export function ChapterHeader({ number, era, title, headline }) {
   return (
     <header className="chapter__header">
       <Reveal className="chapter__tag">
-        <span className="chapter__num">{label || `Chapter ${number}`}</span>
+        <span className="chapter__num">Chapter {number}</span>
         <span className="chapter__era">{era}</span>
       </Reveal>
       <Reveal as="h2" className="chapter__title" delay={80}>

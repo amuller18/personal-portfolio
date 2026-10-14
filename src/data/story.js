@@ -28,7 +28,6 @@ export const hero = {
 export const chapters = [
   {
     id: "hustle",
-    number: "01",
     era: "High school",
     title: "The hustle",
     headline: "I learned that code is leverage before I learned what a for-loop was.",
@@ -49,7 +48,6 @@ export const chapters = [
   },
   {
     id: "telaviv",
-    number: "02",
     era: "Aug – Dec 2023 · Tel Aviv",
     title: "Signal in the inbox",
     headline: "Then I flew to Tel Aviv and met real, unlabeled, chaotic data.",
@@ -70,7 +68,6 @@ export const chapters = [
   },
   {
     id: "tutormatch",
-    number: "03",
     era: "Aug 2023 – Oct 2024",
     title: "Shipping to real people",
     headline: "I co-founded a company and learned that users don't read your code.",
@@ -92,8 +89,6 @@ export const chapters = [
 
 export const interlude = {
   id: "offline",
-  number: "▲",
-  label: "Interlude",
   era: "Salt Lake City & beyond",
   title: "Off the clock",
   headline: "The only charts I like going straight down are ski runs.",
@@ -126,7 +121,6 @@ export const interlude = {
 
 export const traderRanker = {
   id: "traderranker",
-  number: "04",
   era: "Apr 2025 – present",
   title: "TraderRanker",
   headline: "Everyone on crypto Twitter claims to be a genius. I wanted receipts.",
@@ -241,7 +235,6 @@ export const traderRanker = {
 
 export const wallStreet = {
   id: "wolfe",
-  number: "05",
   era: "May 2026 – present · New York / Virtual",
   title: "Wall Street",
   headline: "Then a Wall Street research firm handed me real problems.",
@@ -296,7 +289,6 @@ export const wallStreet = {
 
 export const nextChapter = {
   id: "next",
-  number: "06",
   era: "What's next",
   title: "The next chapter",
   headline: "AI that does real work on real data, safely, at the speed of markets.",
@@ -395,3 +387,21 @@ export const toolkit = [
     items: ["React", "REST APIs", "Stripe", "SMS automation", "Bubble.io"],
   },
 ];
+
+/*
+ * The order the story is told in. Chapter numbers are derived from this list,
+ * so moving or adding a chapter renumbers everything automatically.
+ */
+export const storyOrder = [
+  chapters[0],
+  chapters[1],
+  interlude,
+  chapters[2],
+  traderRanker,
+  wallStreet,
+  nextChapter,
+];
+
+storyOrder.forEach((section, i) => {
+  section.number = String(i + 1).padStart(2, "0");
+});
