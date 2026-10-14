@@ -352,23 +352,6 @@ export const nextChapter = {
   ],
 };
 
-export const sideQuests = [
-  {
-    title: "TutorMatch",
-    body: "Peer-tutoring marketplace with Stripe payments and automated SMS.",
-    img: "./img/tutormatch_ex.png",
-    href: "https://tutormatch.us/",
-    cta: "Live site",
-  },
-  {
-    title: "Scottybot",
-    body: "Python + Selenium auto-checkout bot for scottycameron.com drops.",
-    img: "./img/scotty.png",
-    href: "https://github.com/amuller18/scottybot",
-    cta: "GitHub",
-  },
-];
-
 export const toolkit = [
   {
     group: "Languages",
