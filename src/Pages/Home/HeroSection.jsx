@@ -82,6 +82,7 @@ export default function HeroSection() {
           <div className="hero__meta">
             <span>{profile.role}</span>
             <span>{profile.school}</span>
+            <span>{profile.offline}</span>
           </div>
           <div className="hero__ctas">
             <a className="btn btn--primary" href="#hustle">

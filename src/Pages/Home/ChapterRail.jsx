@@ -26,9 +26,13 @@ export default function ChapterRail({ items }) {
       <ol>
         {items.map((item) => (
           <li key={item.id} className={active === item.id ? "is-active" : ""}>
-            <a href={`#${item.id}`}>
-              <span className="rail__num">{item.number}</span>
-              <span className="rail__label">{item.title}</span>
+            <a
+              href={`#${item.id}`}
+              title={item.title}
+              aria-label={item.title}
+              aria-current={active === item.id ? "location" : undefined}
+            >
+              {item.number}
             </a>
           </li>
         ))}

@@ -8,6 +8,7 @@ export const profile = {
   role: "AI Engineering Intern @ Wolfe Research",
   school: "Computer Engineering, University of Utah '28",
   location: "Salt Lake City, UT",
+  offline: "Skier · climber · hiker · traveler",
   email: "alexjm1818@gmail.com",
   linkedin: "https://www.linkedin.com/in/alexmuller18/",
   github: "https://github.com/amuller18",
@@ -16,7 +17,7 @@ export const profile = {
 export const hero = {
   kicker: "Hi, I'm Alex.",
   lead: "I build",
-  rotating: ["data pipelines", "LLM systems", "trading engines", "scrapers that never sleep"],
+  rotating: ["data pipelines", "LLM systems", "trading engines"],
   tail: "that turn noise into signal.",
   blurb:
     "Every project I've loved has started the same way: a pile of messy, " +
@@ -88,6 +89,35 @@ export const chapters = [
     link: { label: "Visit TutorMatch", href: "https://tutormatch.us/" },
   },
 ];
+
+export const interlude = {
+  id: "offline",
+  number: "▲",
+  label: "Interlude",
+  era: "Salt Lake City & beyond",
+  title: "Off the clock",
+  headline: "The only charts I like going straight down are ski runs.",
+  body: [
+    "Living in Salt Lake City means the mountains are right there, and " +
+      "that's where you'll find me when I'm not at a keyboard: skiing in the " +
+      "winter, hiking and rock climbing the rest of the year, almost always " +
+      "with a group of friends.",
+    "I also love to travel and try new things. Tel Aviv taught me that the " +
+      "best way to learn is to drop yourself somewhere unfamiliar and figure " +
+      "it out, and I've been chasing that feeling ever since.",
+  ],
+  activities: [
+    { key: "ski", title: "Skiing", body: "Powder days are non-negotiable." },
+    { key: "climb", title: "Rock climbing", body: "Problem-solving, but vertical." },
+    { key: "hike", title: "Hiking", body: "Best ideas show up around mile three." },
+    { key: "friends", title: "Friends", body: "Every trip is better with a crew." },
+    { key: "travel", title: "Travel", body: "New city, new food, new perspective." },
+    { key: "new", title: "Trying new things", body: "If I haven't done it yet, I'm in." },
+  ],
+  lesson:
+    "Climbing and code reward the same thing: read the problem, commit to a " +
+    "move, and adjust when you fall.",
+};
 
 export const traderRanker = {
   id: "traderranker",
