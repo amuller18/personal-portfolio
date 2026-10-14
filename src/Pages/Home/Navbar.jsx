@@ -4,6 +4,7 @@ const LINKS = [
   { href: "#hustle", label: "Story" },
   { href: "#traderranker", label: "TraderRanker" },
   { href: "#wolfe", label: "Wall Street" },
+  { href: "#now", label: "Now" },
   { href: "#next", label: "What's next" },
   { href: "#contact", label: "Contact" },
 ];
