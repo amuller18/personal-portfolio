@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 
 const LINKS = [
   { href: "#hustle", label: "Story" },
@@ -68,6 +69,9 @@ export default function Navbar() {
               {link.label}
             </a>
           ))}
+          <Link to="/ski" className="nav__game" onClick={() => setOpen(false)}>
+            Ski the story ⛷
+          </Link>
         </nav>
       </div>
       <div

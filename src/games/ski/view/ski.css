@@ -1,0 +1,708 @@
+/* ---------- Ski mode ---------- */
+html.ski-mode {
+  scroll-behavior: auto;
+  scroll-padding-top: 0;
+}
+
+html.ski-mode body {
+  background: #0b1030;
+}
+
+.ski {
+  --ski-ink: #0b1030;
+  --ski-paper: #fdfbf3;
+  --ski-yellow: #ffd23f;
+  --ski-red: #ff4d4d;
+  --ski-cyan: #5ef0ff;
+  --ski-green: #2bd9a0;
+  --ski-pixel: "Press Start 2P", ui-monospace, monospace;
+  --ski-shadow: 0 0 0 3px var(--ski-ink), 6px 6px 0 3px rgba(11, 16, 48, 0.35);
+  position: relative;
+  min-height: 100vh;
+  background: var(--ski-ink);
+  color: var(--ski-ink);
+}
+
+.ski__stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.ski__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.ski-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.ski-overlay > * {
+  pointer-events: auto;
+}
+
+.ski-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- HUD ---------- */
+.ski-hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: grid;
+  grid-template-columns: 1fr minmax(160px, 420px) 1fr;
+  align-items: center;
+  gap: 16px;
+  padding: 14px clamp(12px, 3vw, 28px);
+  font-family: var(--ski-pixel);
+  color: #fff;
+  pointer-events: none;
+}
+
+.ski-hud > * {
+  pointer-events: auto;
+}
+
+.ski-hud__group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.ski-hud__group--right {
+  justify-content: flex-end;
+}
+
+.ski-hud__home {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  color: var(--ski-ink);
+  background: var(--ski-paper);
+  box-shadow: var(--ski-shadow);
+  font-size: 18px;
+  text-decoration: none;
+  line-height: 1;
+}
+
+.ski-hud__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  background: rgba(11, 16, 48, 0.72);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85);
+  min-width: 0;
+}
+
+.ski-hud__label {
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  color: var(--ski-yellow);
+  text-transform: uppercase;
+}
+
+.ski-hud__value {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.ski-hud__value small {
+  margin-left: 4px;
+  font-size: 7px;
+  color: var(--ski-cyan);
+}
+
+.ski-map {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.ski-map__track {
+  position: relative;
+  width: 100%;
+  height: 10px;
+  background: rgba(11, 16, 48, 0.72);
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.ski-map__fill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, var(--ski-red), var(--ski-yellow));
+  transform-origin: left;
+}
+
+.ski-map__pip {
+  position: absolute;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: 0;
+  background: var(--ski-paper);
+  box-shadow: 0 0 0 2px var(--ski-ink);
+  transform: translate(-50%, -50%) rotate(45deg);
+  cursor: pointer;
+  transition: transform 0.15s, background 0.2s;
+}
+
+.ski-map__pip.is-done {
+  background: var(--ski-green);
+}
+
+.ski-map__pip--finish {
+  background: repeating-conic-gradient(var(--ski-ink) 0 25%, #fff 0 50%) 0 0 / 6px 6px;
+}
+
+.ski-map__pip.is-current {
+  background: var(--ski-yellow);
+  transform: translate(-50%, -50%) rotate(45deg) scale(1.35);
+}
+
+.ski-map__pip:hover,
+.ski-map__pip:focus-visible {
+  transform: translate(-50%, -50%) rotate(45deg) scale(1.5);
+}
+
+.ski-map__label {
+  font-size: 9px;
+  text-shadow: 2px 2px 0 var(--ski-ink);
+}
+
+/* ---------- Trick callouts ---------- */
+.ski-callout {
+  position: absolute;
+  top: 22%;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  transform: translateX(-50%);
+  font-family: var(--ski-pixel);
+  text-align: center;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.ski-callout__name {
+  font-size: clamp(18px, 4vw, 40px);
+  color: var(--ski-yellow);
+  text-transform: uppercase;
+  text-shadow:
+    3px 0 0 var(--ski-ink),
+    -3px 0 0 var(--ski-ink),
+    0 3px 0 var(--ski-ink),
+    0 -3px 0 var(--ski-ink),
+    6px 6px 0 var(--ski-red);
+  animation: ski-pop 0.45s cubic-bezier(0.2, 1.6, 0.4, 1) both, ski-wobble 0.6s 0.45s ease-in-out infinite alternate;
+}
+
+.ski-callout__points {
+  font-size: clamp(22px, 4.5vw, 44px);
+  color: var(--ski-green);
+  text-shadow:
+    3px 0 0 var(--ski-ink),
+    -3px 0 0 var(--ski-ink),
+    0 3px 0 var(--ski-ink),
+    0 -3px 0 var(--ski-ink),
+    6px 6px 0 var(--ski-ink);
+  animation: ski-pop 0.4s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+
+.ski-callout__note {
+  padding: 8px 12px;
+  font-size: 10px;
+  color: #fff;
+  text-transform: uppercase;
+  background: var(--ski-ink);
+  box-shadow: 0 0 0 2px #fff;
+  animation: ski-pop 0.35s 0.1s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+
+.ski-callout--rewind .ski-callout__note {
+  color: var(--ski-cyan);
+  animation: ski-blink 0.6s steps(2) infinite;
+}
+
+/* ---------- Checkpoint cards ---------- */
+.ski-card {
+  position: absolute;
+  top: 50%;
+  left: clamp(16px, 4vw, 56px);
+  width: min(440px, 40vw);
+  max-height: calc(100% - 180px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 22px 22px 18px;
+  background: var(--ski-paper);
+  box-shadow: var(--ski-shadow);
+  font-family: var(--font-body, system-ui, sans-serif);
+  font-size: 15px;
+  line-height: 1.55;
+  transform: translateY(-50%);
+  animation: ski-card-in 0.5s cubic-bezier(0.2, 1.3, 0.4, 1) both;
+}
+
+.ski-card.is-leaving {
+  pointer-events: none;
+  animation: ski-card-out 0.28s ease-in both;
+}
+
+.ski-card--start {
+  top: 54%;
+}
+
+.ski-card__eyebrow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-bottom: 12px;
+  font-family: var(--ski-pixel);
+  font-size: 9px;
+  line-height: 1.6;
+  color: var(--ski-red);
+  text-transform: uppercase;
+}
+
+.ski-card__era {
+  color: #5b6178;
+  text-transform: none;
+}
+
+.ski-card__title {
+  margin-bottom: 10px;
+  font-family: var(--ski-pixel);
+  font-size: clamp(15px, 1.6vw, 19px);
+  line-height: 1.45;
+  letter-spacing: 0;
+  color: var(--ski-ink);
+}
+
+.ski-card__title--hero {
+  font-size: clamp(20px, 2.4vw, 28px);
+  color: var(--ski-ink);
+  text-shadow: 3px 3px 0 var(--ski-yellow);
+}
+
+.ski-card__subtitle {
+  margin-bottom: 14px;
+  font-family: var(--ski-pixel);
+  font-size: 11px;
+  color: #3a63d8;
+  text-transform: uppercase;
+}
+
+.ski-card__lines {
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.ski-card__headline {
+  margin-bottom: 10px;
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-weight: 600;
+  font-size: 17px;
+  line-height: 1.35;
+}
+
+.ski-card__body {
+  margin-bottom: 14px;
+  color: #3b4060;
+}
+
+.ski-card__loot {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 8px;
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+}
+
+.ski-card__loot li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 10px;
+  background: #fff;
+  box-shadow: 0 0 0 2px var(--ski-ink);
+}
+
+.ski-card__loot strong {
+  font-family: var(--ski-pixel);
+  font-size: 11px;
+  color: #3a63d8;
+  word-break: break-word;
+}
+
+.ski-card__loot span {
+  font-size: 12px;
+  line-height: 1.3;
+  color: #5b6178;
+}
+
+.ski-card__quests {
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+}
+
+.ski-card__quests li {
+  padding: 4px 0 4px 22px;
+  position: relative;
+  font-weight: 600;
+}
+
+.ski-card__quests li::before {
+  content: "▸";
+  position: absolute;
+  left: 4px;
+  color: var(--ski-red);
+}
+
+.ski-card__lesson {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  background: var(--ski-ink);
+  color: #fff;
+}
+
+.ski-card__lesson span {
+  display: block;
+  margin-bottom: 6px;
+  font-family: var(--ski-pixel);
+  font-size: 8px;
+  color: var(--ski-yellow);
+  text-transform: uppercase;
+}
+
+.ski-card__lesson p {
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.ski-card__actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+.ski-card__actions .ski-btn--primary {
+  flex: 1;
+}
+
+.ski-card__hint {
+  margin-top: 14px;
+  font-family: var(--ski-pixel);
+  font-size: 8px;
+  line-height: 1.8;
+  color: #5b6178;
+  text-transform: uppercase;
+  animation: ski-blink 1.2s steps(2) infinite;
+}
+
+.ski-card__hint kbd {
+  padding: 2px 5px;
+  font-family: inherit;
+  background: var(--ski-ink);
+  color: #fff;
+}
+
+.ski-card__more {
+  display: inline-block;
+  margin-top: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #3a63d8;
+}
+
+.ski-card__results {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 4px 0 12px;
+}
+
+.ski-card__results div {
+  padding: 10px;
+  background: var(--ski-ink);
+  color: #fff;
+}
+
+.ski-card__results dt {
+  margin-bottom: 8px;
+  font-family: var(--ski-pixel);
+  font-size: 7px;
+  color: var(--ski-yellow);
+  text-transform: uppercase;
+}
+
+.ski-card__results dd {
+  margin: 0;
+  font-family: var(--ski-pixel);
+  font-size: 15px;
+}
+
+.ski-card__badge {
+  margin-bottom: 10px;
+  font-family: var(--ski-pixel);
+  font-size: 10px;
+  color: var(--ski-red);
+  text-align: center;
+  animation: ski-blink 0.8s steps(2) infinite;
+}
+
+.ski-card__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+/* ---------- Buttons ---------- */
+.ski-btn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 46px;
+  padding: 10px 16px;
+  border: 3px solid var(--ski-ink);
+  background: #fff;
+  color: var(--ski-ink);
+  box-shadow: 0 5px 0 var(--ski-ink);
+  font-family: var(--ski-pixel);
+  font-size: 11px;
+  line-height: 1.2;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.08s, box-shadow 0.08s, background 0.15s;
+}
+
+.ski-btn:hover {
+  background: var(--ski-cyan);
+}
+
+.ski-btn:active {
+  transform: translateY(5px);
+  box-shadow: 0 0 0 var(--ski-ink);
+}
+
+.ski-btn:focus-visible {
+  outline: 3px solid var(--ski-red);
+  outline-offset: 3px;
+}
+
+.ski-btn--primary {
+  background: var(--ski-yellow);
+}
+
+.ski-btn--primary:hover {
+  background: #ffe27a;
+}
+
+.ski-btn--small {
+  min-height: 38px;
+  padding: 8px 12px;
+  font-size: 9px;
+}
+
+.ski-btn__sub {
+  font-size: 7px;
+  color: #5b6178;
+  text-transform: none;
+}
+
+.ski-card--start .ski-btn--primary {
+  animation: ski-pulse 1.1s ease-in-out infinite;
+}
+
+.ski-pad {
+  position: absolute;
+  right: clamp(12px, 3vw, 28px);
+  bottom: clamp(16px, 4vh, 32px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ski-btn--icon {
+  width: 46px;
+  padding: 0;
+  font-size: 14px;
+}
+
+/* ---------- Animations ---------- */
+@keyframes ski-card-in {
+  from {
+    opacity: 0;
+    transform: translate(-40px, -50%) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, -50%) scale(1);
+  }
+}
+
+@keyframes ski-card-out {
+  from {
+    opacity: 1;
+    transform: translate(0, -50%);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-60px, -50%);
+  }
+}
+
+@keyframes ski-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.3) rotate(-8deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+@keyframes ski-wobble {
+  from {
+    transform: rotate(-3deg) scale(1);
+  }
+  to {
+    transform: rotate(3deg) scale(1.06);
+  }
+}
+
+@keyframes ski-blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@keyframes ski-pulse {
+  50% {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 0 var(--ski-ink);
+  }
+}
+
+/* ---------- Small screens: bottom-sheet cards ---------- */
+@media (max-width: 760px) {
+  .ski-hud {
+    grid-template-columns: auto 1fr auto;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .ski-hud__stat--wide,
+  .ski-hud__group--right .ski-hud__stat:first-child {
+    display: none;
+  }
+
+  .ski-hud__stat {
+    padding: 6px 8px;
+  }
+
+  .ski-hud__value {
+    font-size: 10px;
+  }
+
+  .ski-map__label {
+    font-size: 8px;
+  }
+
+  .ski-map__pip {
+    width: 9px;
+    height: 9px;
+  }
+
+  .ski-card,
+  .ski-card--start {
+    top: auto;
+    bottom: 12px;
+    left: 12px;
+    right: 12px;
+    width: auto;
+    max-height: 56%;
+    padding: 18px 16px 14px;
+    font-size: 14px;
+    transform: none;
+  }
+
+  .ski-card__headline {
+    font-size: 15px;
+  }
+
+  .ski-pad {
+    display: none;
+  }
+
+  @keyframes ski-card-in {
+    from {
+      opacity: 0;
+      transform: translateY(40px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes ski-card-out {
+    from {
+      opacity: 1;
+      transform: none;
+    }
+    to {
+      opacity: 0;
+      transform: translateY(60px);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ski-card,
+  .ski-card.is-leaving,
+  .ski-callout__name,
+  .ski-callout__points,
+  .ski-callout__note,
+  .ski-card__hint,
+  .ski-card__badge,
+  .ski-card--start .ski-btn--primary {
+    animation: none;
+  }
+
+  .ski-card.is-leaving {
+    opacity: 0;
+  }
+}

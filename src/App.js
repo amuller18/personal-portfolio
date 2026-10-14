@@ -1,8 +1,11 @@
 import "./App.css";
-import React from "react";
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
+import React, { lazy, Suspense } from "react";
+import { BrowserRouter as Router, Outlet, Route, Routes } from "react-router-dom";
 import Navbar from "./Pages/Home/Navbar";
 import Home from "./Pages/Home/Homescreen";
+
+/* Game modes are full-screen and load on demand. */
+const SkiGame = lazy(() => import("./games/ski/SkiGame"));
 
 function NotFound() {
   return (
@@ -16,13 +19,31 @@ function NotFound() {
   );
 }
 
+function SiteLayout() {
+  return (
+    <>
+      <Navbar />
+      <Outlet />
+    </>
+  );
+}
+
 function App() {
   return (
     <Router>
-      <Navbar />
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="*" element={<NotFound />} />
+        <Route
+          path="/ski"
+          element={
+            <Suspense fallback={<div className="game-loading">Loading the lift…</div>}>
+              <SkiGame />
+            </Suspense>
+          }
+        />
+        <Route element={<SiteLayout />}>
+          <Route path="/" element={<Home />} />
+          <Route path="*" element={<NotFound />} />
+        </Route>
       </Routes>
     </Router>
   );
