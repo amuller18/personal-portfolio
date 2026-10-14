@@ -106,6 +106,11 @@ export const interlude = {
       "best way to learn is to drop yourself somewhere unfamiliar and figure " +
       "it out, and I've been chasing that feeling ever since.",
   ],
+  photo: {
+    src: "./img/skiing.jpg",
+    alt: "Alex grinning while carrying skis across a snow-covered bridge",
+    caption: "Powder day. Obviously.",
+  },
   activities: [
     { key: "ski", title: "Skiing", body: "Powder days are non-negotiable." },
     { key: "climb", title: "Rock climbing", body: "Problem-solving, but vertical." },

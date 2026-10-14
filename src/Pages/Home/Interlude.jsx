@@ -52,14 +52,26 @@ export default function Interlude() {
         ))}
       </svg>
       <div className="container">
-        <div className="chapter__grid">
-          <ChapterHeader {...interlude} />
-          <div className="chapter__body">
-            {interlude.body.map((paragraph, i) => (
-              <Reveal as="p" key={i} delay={i * 80}>
-                {paragraph}
-              </Reveal>
-            ))}
+        <div className="interlude__grid">
+          <Reveal as="figure" className="polaroid">
+            <img
+              src={interlude.photo.src}
+              alt={interlude.photo.alt}
+              width="900"
+              height="1200"
+              loading="lazy"
+            />
+            <figcaption>{interlude.photo.caption}</figcaption>
+          </Reveal>
+          <div className="interlude__text">
+            <ChapterHeader {...interlude} />
+            <div className="chapter__body">
+              {interlude.body.map((paragraph, i) => (
+                <Reveal as="p" key={i} delay={i * 80}>
+                  {paragraph}
+                </Reveal>
+              ))}
+            </div>
           </div>
         </div>
 
