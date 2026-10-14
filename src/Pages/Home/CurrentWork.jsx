@@ -1,5 +1,6 @@
 import { currentWork as now } from "../../data/story";
 import { ChapterHeader, Lesson } from "./Chapter";
+import { LedgerDoodle } from "./Doodles";
 import Reveal from "./Reveal";
 
 function Connector() {
@@ -51,7 +52,7 @@ export default function CurrentWork() {
     <section id={now.id} className="chapter chapter--now">
       <div className="container">
         <div className="chapter__grid">
-          <ChapterHeader {...now} />
+          <ChapterHeader {...now} doodle={<LedgerDoodle />} />
           <div className="chapter__body">
             <Reveal>
               <span className="badge badge--live">

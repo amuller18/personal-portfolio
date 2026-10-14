@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { interlude } from "../../data/story";
 import { mulberry32 } from "../../lib/sim";
 import { ChapterHeader, Lesson } from "./Chapter";
+import { Snowfall } from "./Doodles";
 import Reveal from "./Reveal";
 
 const WIDTH = 1200;
@@ -41,6 +42,7 @@ export default function Interlude() {
 
   return (
     <section id={interlude.id} className="chapter interlude">
+      <Snowfall />
       <svg
         className="interlude__ridges"
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}

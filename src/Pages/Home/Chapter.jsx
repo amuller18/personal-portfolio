@@ -1,6 +1,14 @@
+import { CheckoutRace, ClusterDoodle, CountUp, SmsDoodle } from "./Doodles";
 import Reveal from "./Reveal";
 
-export function ChapterHeader({ number, era, title, headline }) {
+/* Animated doodles for chapters that use the standard layout. */
+const DOODLES = {
+  hustle: CheckoutRace,
+  telaviv: ClusterDoodle,
+  tutormatch: SmsDoodle,
+};
+
+export function ChapterHeader({ number, era, title, headline, doodle }) {
   return (
     <header className="chapter__header">
       <Reveal className="chapter__tag">
@@ -13,6 +21,11 @@ export function ChapterHeader({ number, era, title, headline }) {
       <Reveal as="p" className="chapter__headline" delay={160}>
         {headline}
       </Reveal>
+      {doodle && (
+        <Reveal className="chapter__doodle" delay={240}>
+          {doodle}
+        </Reveal>
+      )}
     </header>
   );
 }
@@ -27,10 +40,11 @@ export function Lesson({ children }) {
 }
 
 export default function Chapter({ chapter }) {
+  const Doodle = DOODLES[chapter.id];
   return (
     <section id={chapter.id} className="chapter">
       <div className="container chapter__grid">
-        <ChapterHeader {...chapter} />
+        <ChapterHeader {...chapter} doodle={Doodle && <Doodle />} />
         <div className="chapter__body">
           {chapter.body.map((paragraph, i) => (
             <Reveal as="p" key={i} delay={i * 80}>
@@ -40,7 +54,7 @@ export default function Chapter({ chapter }) {
           <Reveal className="stat-row" delay={160}>
             {chapter.stats.map((stat) => (
               <div key={stat.label} className="stat">
-                <span className="stat__value">{stat.value}</span>
+                <CountUp value={stat.value} />
                 <span className="stat__label">{stat.label}</span>
               </div>
             ))}

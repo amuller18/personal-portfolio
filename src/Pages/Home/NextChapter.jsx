@@ -1,5 +1,6 @@
 import { nextChapter as next } from "../../data/story";
 import { ChapterHeader } from "./Chapter";
+import { RoadmapDoodle } from "./Doodles";
 import Reveal from "./Reveal";
 
 export default function NextChapter() {
@@ -7,7 +8,7 @@ export default function NextChapter() {
     <section id={next.id} className="chapter chapter--next">
       <div className="container">
         <div className="chapter__grid">
-          <ChapterHeader {...next} />
+          <ChapterHeader {...next} doodle={<RoadmapDoodle />} />
           <div className="chapter__body">
             <Reveal as="p">{next.body}</Reveal>
           </div>
