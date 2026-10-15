@@ -9,7 +9,7 @@
  */
 import * as THREE from "three";
 import { CSS3DObject, CSS3DRenderer } from "three/examples/jsm/renderers/CSS3DRenderer.js";
-import { CLIFF } from "../../model/course";
+import { CLIFF, LODGE } from "../../model/course";
 import { clamp, clamp01, lerp, smoothRange, smoothstep } from "../../../shared/math";
 import { SURFACE_PX_HEIGHT, SURFACE_SPECS, surfaceAspect } from "../surfaces";
 import Director from "./director";
@@ -211,6 +211,10 @@ export default class SkiRenderer3D {
 
     const cam = this.camera.position;
     this.snow.update(dt, frame.time, cam, this.reducedMotion);
+    // No snowfall indoors (the lodge).
+    this.snow.points.visible = !this.course.pads.some(
+      (pad) => cam.x > pad.x0 && cam.x < pad.x1 && cam.z < LODGE.frontZ && cam.z > pad.z0,
+    );
     this.sky.position.copy(cam);
     this.sunDisc.position.copy(cam).addScaledVector(this.sunDir, 22000);
     this.sunGlow.position.copy(this.sunDisc.position);

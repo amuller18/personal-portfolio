@@ -1178,6 +1178,10 @@ html.ski-mode body {
   font-size: 15px;
 }
 
+.board .ski-btn__main {
+  white-space: nowrap;
+}
+
 .board-more {
   margin-left: auto;
   font-size: 26px;

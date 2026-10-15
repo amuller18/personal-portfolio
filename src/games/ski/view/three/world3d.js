@@ -850,8 +850,9 @@ export function buildWorld(course) {
     const site = makeSite(place, centerY);
     const granite = standard("#7d8597", { roughness: 1 });
     const darkRock = standard("#5d6577", { roughness: 1 });
-    const slab = mesh(new THREE.BoxGeometry(1, 1, 40), darkRock, site);
-    slab.position.z = -22;
+    // An irregular boulder behind the painted face, not a flat box.
+    const slab = mesh(new THREE.IcosahedronGeometry(0.5, 1), granite, site);
+    slab.position.z = -48;
     const boulderGeometry = new THREE.DodecahedronGeometry(1, 0);
     const boulders = [
       [-0.5, 0.5, 1.1, granite],
@@ -868,7 +869,7 @@ export function buildWorld(course) {
     });
     const caps = boulders.slice(0, 2).map(() => mesh(new THREE.SphereGeometry(1, 8, 5, 0, Math.PI * 2, 0, Math.PI / 2), snowCap, site));
     const resize = (w, h) => {
-      slab.scale.set(w + 70, h + 70, 1);
+      slab.scale.set(w + 150, h + 150, 100);
       boulders.forEach((rock) => {
         const { u, v, size } = rock.userData;
         const radius = 70 * size;
