@@ -128,13 +128,13 @@ export default class Director {
 
     switch (skier.phase) {
       case "walk":
-        target.offset.set(30, 70, 270);
+        target.offset.set(30, 70, -270);
         target.look.set(50, 34, 0);
         target.fov = 46;
         target.stiffness = 5;
         return "walk";
       case "stepin":
-        target.offset.set(70, 46, 190);
+        target.offset.set(70, 46, -190);
         target.look.set(0, 20, 0);
         target.fov = 44;
         target.stiffness = 5;

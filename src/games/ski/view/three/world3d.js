@@ -359,8 +359,8 @@ export function buildWorld(course) {
 
   // Base area: a ski rack and a sign pointing to the lift.
   const rack = new THREE.Group();
-  rack.position.set(-70, heightAt(-70, -110), -110);
-  rack.rotation.y = 0.2;
+  rack.position.set(-70, heightAt(-70, 120), 120);
+  rack.rotation.y = Math.PI - 0.2;
   group.add(rack);
   [-1, 1].forEach((side) => {
     const leg = mesh(new THREE.BoxGeometry(5, 46, 5), standard("#6b4a2f"), rack);
@@ -375,8 +375,8 @@ export function buildWorld(course) {
   });
 
   const sign = new THREE.Group();
-  sign.position.set(140, heightAt(140, -95), -95);
-  sign.rotation.y = 0.35;
+  sign.position.set(170, heightAt(170, 110), 110);
+  sign.rotation.y = -0.35;
   group.add(sign);
   const post = mesh(new THREE.BoxGeometry(5, 64, 5), standard("#6b4a2f"), sign);
   post.position.y = 32;
@@ -402,7 +402,7 @@ export function buildWorld(course) {
   if (queueX) {
     const sx = stopXs[queueX.index];
     const ropeMaterial = keep(new THREE.LineBasicMaterial({ color: "#ff4d4d" }));
-    [-80, -26, 26].forEach((z) => {
+    [-26, 26, 80].forEach((z) => {
       const points = [];
       for (let x = sx - 200; x <= sx + 40; x += 40) {
         const ground = heightAt(x, z);
@@ -413,7 +413,7 @@ export function buildWorld(course) {
       group.add(new THREE.Line(keep(new THREE.BufferGeometry().setFromPoints(points)), ropeMaterial));
     });
     // Other skiers wait in the next lane over, so the walk-in stays clear.
-    queueStops.push({ x: sx + 20, z: -53 }, { x: sx - 30, z: -55 }, { x: sx - 82, z: -51 });
+    queueStops.push({ x: sx + 20, z: 53 }, { x: sx - 30, z: 55 }, { x: sx - 82, z: 51 });
   }
 
   // Base lodge.
