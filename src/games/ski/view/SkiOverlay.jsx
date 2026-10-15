@@ -182,7 +182,7 @@ function StartCard({ stop, nextTrick, onNext }) {
         </li>
       </ul>
       <div className="ski-card__actions">
-        <NextButton onNext={onNext} nextTrick={nextTrick} label="Drop in" i={5} />
+        <NextButton onNext={onNext} nextTrick={nextTrick} label="Head to the lift" i={5} />
       </div>
     </>
   );

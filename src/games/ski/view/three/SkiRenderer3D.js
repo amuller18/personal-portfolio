@@ -13,7 +13,16 @@ import { clamp, clamp01, lerp, smoothRange } from "../../../shared/math";
 import { SURFACE_PX_HEIGHT, SURFACE_WORLD_HEIGHT, surfaceAspect } from "../surfaces";
 import Director from "./director";
 import { createBursts, createSnowfall } from "./particles3d";
+import { RIDER } from "../drawSkier";
+import { REST_POSE } from "../../model/tricks";
 import { createRider } from "./rider3d";
+
+/* Other skiers waiting in the lift line. */
+const QUEUE_PALETTES = [
+  { ...RIDER, jacket: "#3a63d8", jacketShade: "#2a4aa8", helmet: "#f2f7ff", scarf: "#5ef0ff", ski: "#2bd9a0", skiBack: "#1f9e77" },
+  { ...RIDER, jacket: "#2bd9a0", jacketShade: "#1f9e77", helmet: "#0b1030", scarf: "#ff8a3d", ski: "#c77dff", skiBack: "#9a5ad0" },
+  { ...RIDER, jacket: "#c77dff", jacketShade: "#9a5ad0", helmet: "#ff4d4d", scarf: "#ffd23f", ski: "#3a63d8", skiBack: "#2a4aa8" },
+];
 import { buildWorld } from "./world3d";
 
 const SKY = [
@@ -71,6 +80,15 @@ export default class SkiRenderer3D {
     this.rider = createRider();
     scene.add(this.rider.root);
 
+    this.queue = this.world.queueStops.map((spot, i) => {
+      const npc = createRider(QUEUE_PALETTES[i % QUEUE_PALETTES.length]);
+      npc.root.position.set(spot.x, this.world.heightAt(spot.x, spot.z), spot.z);
+      npc.root.rotation.y = (i % 2 ? 1 : -1) * 0.25;
+      npc.phase = i * 1.7;
+      scene.add(npc.root);
+      return npc;
+    });
+
     this.skyUniforms = { top: { value: new THREE.Color() }, bottom: { value: new THREE.Color() } };
     this.sky = new THREE.Mesh(
       new THREE.SphereGeometry(30000, 24, 16),
@@ -99,7 +117,7 @@ export default class SkiRenderer3D {
     scene.add(this.hemi);
     this.sun = new THREE.DirectionalLight("#fff1d6", 2.4);
     this.sun.castShadow = true;
-    this.sun.shadow.mapSize.set(2048, 2048);
+    this.sun.shadow.mapSize.set(1024, 1024);
     Object.assign(this.sun.shadow.camera, { left: -320, right: 320, top: 320, bottom: -320, near: 10, far: 2400 });
     this.sun.shadow.bias = -0.0008;
     this.sun.shadow.normalBias = 0.6;
@@ -123,9 +141,10 @@ export default class SkiRenderer3D {
         mount.className = `ski-surface ski-surface--${surface.kind}`;
         const object = new CSS3DObject(mount);
         object.position.copy(surface.center);
+        object.rotation.y = surface.rotationY;
         object.scale.setScalar(SURFACE_WORLD_HEIGHT / SURFACE_PX_HEIGHT);
         this.cssScene.add(object);
-        this.surfaceObjects.set(index, { object, mount });
+        this.surfaceObjects.set(index, { object, mount, opacity: -1, active: null });
         this.surfaceMounts[index] = mount;
       });
     }
@@ -151,7 +170,7 @@ export default class SkiRenderer3D {
     this.height = Math.max(1, Math.round(rect.height));
     this.narrow = this.width < 760;
     const ratio = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
-    this.renderer.setPixelRatio(Math.min(ratio, this.narrow ? 1.5 : 2));
+    this.renderer.setPixelRatio(Math.min(ratio, 1.5));
     this.renderer.setSize(this.width, this.height, false);
     this.camera.aspect = this.width / this.height;
     this.camera.updateProjectionMatrix();
@@ -195,6 +214,9 @@ export default class SkiRenderer3D {
     });
 
     this.world.update(frame);
+    this.queue.forEach((npc) => {
+      npc.update({ pose: REST_POSE, time: frame.time + npc.phase, speed: 0, airborne: false, squash: 0 });
+    });
     this.bursts.update(this.reducedMotion ? 0 : dt);
 
     this.director.update(frame, dt, {
@@ -222,14 +244,22 @@ export default class SkiRenderer3D {
    * over unrelated 3D content, and only the one you're at is clickable. */
   renderSurfaces(frame) {
     if (!this.css) return;
-    this.surfaceObjects.forEach(({ object, mount }, index) => {
+    this.surfaceObjects.forEach((entry, index) => {
+      const { object, mount } = entry;
       const distance = Math.abs(frame.progress - index);
-      const opacity = 1 - smoothRange(distance, 0.03, 0.11);
+      const opacity = Math.round((1 - smoothRange(distance, 0.03, 0.11)) * 100) / 100;
       object.visible = opacity > 0.01;
-      mount.style.opacity = opacity.toFixed(3);
+      // Only touch the DOM when something changed; style writes are costly.
+      if (opacity !== entry.opacity) {
+        mount.style.opacity = String(opacity);
+        entry.opacity = opacity;
+      }
       const active = distance < 0.05 && Math.abs(frame.velocity) < 0.3;
-      mount.classList.toggle("is-active", active);
-      mount.style.pointerEvents = active ? "auto" : "none";
+      if (active !== entry.active) {
+        mount.classList.toggle("is-active", active);
+        mount.style.pointerEvents = active ? "auto" : "none";
+        entry.active = active;
+      }
     });
     this.css.render(this.cssScene, this.camera);
   }
@@ -342,6 +372,7 @@ export default class SkiRenderer3D {
   dispose() {
     this.world.dispose();
     this.rider.dispose();
+    this.queue.forEach((npc) => npc.dispose());
     this.bursts.dispose();
     this.snow.dispose();
     [this.sky, this.sunDisc, this.sunGlow].forEach((m) => {

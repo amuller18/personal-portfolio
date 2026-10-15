@@ -4,17 +4,22 @@
  * progress p?". Progress is measured in stops: 0 is the summit start,
  * 1 is chapter one, ..., stopCount - 1 is the finish.
  *
- * A run is either
- *   descent  ski down with a kicker, a trick in the air, and a landing
+ * A run is one of
+ *   walk     skis on the shoulder, walk over, drop them, step in, shuffle on
  *   lift     skate to a chairlift, ride it up, unload, skate to the next stop
+ *   descent  ski down with a kicker, a trick in the air, and a landing
+ *
+ * Every phase change blends smoothly (no corners in position over progress),
+ * so scrolling never produces a jolt.
  *
  * World units: x grows to the right (downhill), y grows down.
  */
-import { clamp, lerp, seededRandom, smoothRange, smoothstep } from "../../shared/math";
+import { clamp, lerp, monotoneCubic, seededRandom, smoothRange, smoothstep } from "../../shared/math";
 import { REST_POSE, trickForJump } from "./tricks";
 
 export const RUN_LENGTH = 1400;
-export const LIFT_LENGTH = 1500;
+export const LIFT_LENGTH = 2000;
+export const WALK_LENGTH = 420;
 export const KICKER = { start: 0.4, lip: 0.5, end: 0.508, height: 80 };
 export const LANDING = 0.8;
 export const AIR_HEIGHT = 170;
@@ -29,19 +34,29 @@ export const LIFT = {
   ride: 0.8,
   unload: 0.88,
   loadX: 70,
-  unloadX: 1180,
-  offX: 1260,
+  unloadX: 1680,
+  offX: 1760,
   seat: 30,
   rise: 150,
   hanger: 44,
   pace: 0.38,
 };
 
-/* Stops reached by chairlift instead of skiing down. Keyed by chapter id. */
+/* Stops reached on foot or by chairlift instead of skiing down. Keyed by id. */
+export const DEFAULT_WALK_STOPS = ["hustle"];
 export const DEFAULT_LIFT_STOPS = ["telaviv"];
 
-const SLOPE = { stop: 0.16, run: 0.52, landing: 0.64, climb: -0.5 };
-const SUMMIT = 950;
+/* Walk runs, as fractions of the run's progress -> local x. */
+const WALK_PATH = monotoneCubic([
+  [0, 0],
+  [0.6, 300],
+  [0.82, 306],
+  [1, WALK_LENGTH],
+]);
+const WALK = { carryEnd: 0.6, dropEnd: 0.8 };
+
+const SLOPE = { stop: 0.16, run: 0.52, landing: 0.64, climb: -0.6 };
+const BASE_AREA = 950;
 const RUN_OUT = 1500;
 const STEP = 4;
 export const TOP_FT = 11000;
@@ -60,30 +75,25 @@ export const PACE = [
 export const TAKEOFF = PACE[1][0];
 export const TOUCHDOWN = PACE[2][0];
 
-export function paceRun(f) {
-  const t = clamp(f, 0, 1);
-  for (let i = 1; i < PACE.length; i += 1) {
-    const [f1, u1] = PACE[i];
-    if (t <= f1) {
-      const [f0, u0] = PACE[i - 1];
-      return lerp(u0, u1, (t - f0) / (f1 - f0));
-    }
-  }
-  return 1;
-}
+const paceCurve = monotoneCubic(PACE);
+export const paceRun = (f) => paceCurve(clamp(f, 0, 1));
 
-export function createCourse(stops, { liftStops = DEFAULT_LIFT_STOPS } = {}) {
+export function createCourse(stops, { walkStops = DEFAULT_WALK_STOPS, liftStops = DEFAULT_LIFT_STOPS } = {}) {
   const stopCount = stops.length;
   const runCount = stopCount - 1;
+  const walked = new Set(walkStops);
   const lifted = new Set(liftStops);
+  const LENGTHS = { walk: WALK_LENGTH, lift: LIFT_LENGTH, descent: RUN_LENGTH };
+  const PACES = { walk: 0.55, lift: LIFT.pace, descent: 1 };
 
   /* ---------- Layout ---------- */
 
   const runs = [];
   let cursor = 0;
   for (let i = 0; i < runCount; i += 1) {
-    const type = lifted.has(stops[i + 1].id) ? "lift" : "descent";
-    const length = type === "lift" ? LIFT_LENGTH : RUN_LENGTH;
+    const next = stops[i + 1].id;
+    const type = walked.has(next) ? "walk" : lifted.has(next) ? "lift" : "descent";
+    const length = LENGTHS[type];
     const previous = runs[i - 1];
     runs.push({
       index: i,
@@ -91,8 +101,8 @@ export function createCourse(stops, { liftStops = DEFAULT_LIFT_STOPS } = {}) {
       start: cursor,
       end: cursor + length,
       length,
-      startSlope: previous && previous.type === "lift" ? 0 : SLOPE.stop,
-      pace: type === "lift" ? LIFT.pace : 1,
+      startSlope: previous && previous.type === "descent" ? SLOPE.stop : 0,
+      pace: PACES[type],
       jump: null,
     });
     cursor += length;
@@ -116,7 +126,7 @@ export function createCourse(stops, { liftStops = DEFAULT_LIFT_STOPS } = {}) {
 
   const stopXs = [0, ...runs.map((run) => run.end)];
   const finishX = stopXs[stopXs.length - 1];
-  const startX = -SUMMIT;
+  const startX = -BASE_AREA;
   const endX = finishX + RUN_OUT;
   const lastRun = runs[runs.length - 1];
   const endSlope = lastRun.type === "lift" ? 0 : SLOPE.stop;
@@ -132,20 +142,17 @@ export function createCourse(stops, { liftStops = DEFAULT_LIFT_STOPS } = {}) {
   /* ---------- Terrain ---------- */
 
   function slopeAt(x) {
-    if (x < 0) {
-      // Steep back side, a flat summit, then a gentle roll into the start.
-      return (
-        lerp(-0.75, 0, smoothRange(x, -SUMMIT * 0.75, -SUMMIT * 0.4)) +
-        SLOPE.stop * smoothRange(x, -220, 0)
-      );
-    }
+    // The base area is flat; the start is down here by the lift.
+    if (x < 0) return 0;
     if (x >= finishX) return endSlope * (1 - smoothRange(x - finishX, 0, 400));
     const run = runAt(x);
     const local = x - run.start;
+    if (run.type === "walk") return run.startSlope * (1 - smoothRange(local, 0, 40));
     if (run.type === "lift") {
+      // Flat loading area, a long climb, then a flat top.
       return (
         run.startSlope * (1 - smoothRange(local, 0, 40)) +
-        SLOPE.climb * smoothRange(local, 110, 260) * (1 - smoothRange(local, 1000, 1150))
+        SLOPE.climb * smoothRange(local, 480, 660) * (1 - smoothRange(local, 1460, 1620))
       );
     }
     const u = local / RUN_LENGTH;
@@ -227,9 +234,11 @@ export function createCourse(stops, { liftStops = DEFAULT_LIFT_STOPS } = {}) {
   function isSkied(x) {
     if (inAir(x)) return false;
     const run = runAt(x);
-    if (!run || run.type !== "lift") return true;
+    if (!run) return x >= finishX;
     const local = x - run.start;
-    return local < LIFT.loadX || local > LIFT.unloadX;
+    if (run.type === "walk") return local > WALK_PATH(WALK.dropEnd);
+    if (run.type === "lift") return local < LIFT.loadX || local > LIFT.unloadX;
+    return true;
   }
 
   /* ---------- Poses ---------- */
@@ -251,6 +260,21 @@ export function createCourse(stops, { liftStops = DEFAULT_LIFT_STOPS } = {}) {
     };
   };
 
+  function walkPose(run, f) {
+    const local = WALK_PATH(f);
+    const phase = f < WALK.carryEnd ? "walk" : f < WALK.dropEnd ? "stepin" : "shuffle";
+    return {
+      ...grounded(run.start + local, phase),
+      run: run.index,
+      pose: {
+        ...REST_POSE,
+        carry: 1 - smoothRange(f, WALK.carryEnd - 0.02, WALK.dropEnd - 0.04),
+        walk: 1 - smoothRange(f, WALK.carryEnd - 0.12, WALK.carryEnd),
+        stride: local * 0.09,
+      },
+    };
+  }
+
   function liftPose(run, f) {
     const loadX = run.start + LIFT.loadX;
     const unloadX = run.start + LIFT.unloadX;
@@ -271,7 +295,8 @@ export function createCourse(stops, { liftStops = DEFAULT_LIFT_STOPS } = {}) {
       };
     }
     if (f < LIFT.ride) {
-      const s = (f - LIFT.load) / (LIFT.ride - LIFT.load);
+      // Chairs ease out of the bottom station and slow into the top one.
+      const s = smoothstep((f - LIFT.load) / (LIFT.ride - LIFT.load));
       const seat = seatAt(run, s);
       const y = seat.y + LIFT.seat;
       return {
@@ -335,12 +360,13 @@ export function createCourse(stops, { liftStops = DEFAULT_LIFT_STOPS } = {}) {
     const index = Math.min(Math.floor(p), runCount - 1);
     const run = runs[index];
     const f = p - index;
+    if (run.type === "walk") return walkPose(run, f);
     return run.type === "lift" ? liftPose(run, f) : descentPose(run, f);
   }
 
   /* ---------- Elevation ---------- */
 
-  const topY = groundY(0);
+  const topY = Math.min(...stopXs.map((x) => groundY(x)));
   const bottomY = groundY(finishX);
   const elevationAt = (y) => TOP_FT - ((y - topY) / (bottomY - topY)) * (TOP_FT - BASE_FT);
 
@@ -357,7 +383,6 @@ export function createCourse(stops, { liftStops = DEFAULT_LIFT_STOPS } = {}) {
     const depth = 60 + rand() * 90;
     if (nearStop && x > -200) continue;
     if (!front && at && at.u > 0.34 && at.u < 0.88) continue;
-    if (x > -SUMMIT * 0.42 && x < 0) continue;
     if (x > finishX + 380 && x < finishX + 760) continue;
     trees.push({ x, size: front ? size * 1.3 : size, front, tint, depth: front ? depth : 4 });
   }

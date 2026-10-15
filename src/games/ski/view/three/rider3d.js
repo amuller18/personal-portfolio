@@ -10,7 +10,7 @@ import { PIVOT, solveRig } from "../rig";
 
 const UP = new THREE.Vector3(0, 1, 0);
 
-export function createRider() {
+export function createRider(palette = RIDER) {
   const root = new THREE.Group();
   const pivot = new THREE.Group();
   const body = new THREE.Group();
@@ -43,37 +43,44 @@ export function createRider() {
     const tip = add(new THREE.BoxGeometry(8, 1.6, 5.5), color, group);
     tip.position.set(31, 2.6, 0);
     tip.rotation.z = 0.55;
-    const boot = add(new THREE.BoxGeometry(11, 7, 7), RIDER.boot, group);
-    boot.position.set(0, 4.5, 0);
+    body.add(group);
+    return group;
+  };
+  const boot = () => {
+    const group = new THREE.Group();
+    const shell = add(new THREE.BoxGeometry(11, 7, 7), palette.boot, group);
+    shell.position.set(0, 3.5, 0);
     body.add(group);
     return group;
   };
 
   const parts = {
-    skiFront: ski(RIDER.ski),
-    skiBack: ski(RIDER.skiBack),
-    thighFront: add(limbGeometry(3.6), RIDER.pants),
-    shinFront: add(limbGeometry(3.3), RIDER.pants),
-    thighBack: add(limbGeometry(3.6), RIDER.pantsShade),
-    shinBack: add(limbGeometry(3.3), RIDER.pantsShade),
-    torso: add(new THREE.CylinderGeometry(6.2, 5.4, 1, 8), RIDER.jacket),
-    armFront: add(limbGeometry(2.6), RIDER.jacketShade),
-    armBack: add(limbGeometry(2.6), RIDER.jacketShade),
-    poleFront: add(limbGeometry(0.7), RIDER.pole),
-    poleBack: add(limbGeometry(0.7), RIDER.pole),
-    gloveFront: add(new THREE.SphereGeometry(2.8, 6, 5), RIDER.goggles),
-    gloveBack: add(new THREE.SphereGeometry(2.8, 6, 5), RIDER.goggles),
+    skiFront: ski(palette.ski),
+    bootFront: boot(),
+    bootBack: boot(),
+    skiBack: ski(palette.skiBack),
+    thighFront: add(limbGeometry(3.6), palette.pants),
+    shinFront: add(limbGeometry(3.3), palette.pants),
+    thighBack: add(limbGeometry(3.6), palette.pantsShade),
+    shinBack: add(limbGeometry(3.3), palette.pantsShade),
+    torso: add(new THREE.CylinderGeometry(6.2, 5.4, 1, 8), palette.jacket),
+    armFront: add(limbGeometry(2.6), palette.jacketShade),
+    armBack: add(limbGeometry(2.6), palette.jacketShade),
+    poleFront: add(limbGeometry(0.7), palette.pole),
+    poleBack: add(limbGeometry(0.7), palette.pole),
+    gloveFront: add(new THREE.SphereGeometry(2.8, 6, 5), palette.goggles),
+    gloveBack: add(new THREE.SphereGeometry(2.8, 6, 5), palette.goggles),
     head: new THREE.Group(),
-    scarf: [0, 1, 2].map(() => add(new THREE.BoxGeometry(6, 3, 3), RIDER.scarf)),
+    scarf: [0, 1, 2].map(() => add(new THREE.BoxGeometry(6, 3, 3), palette.scarf)),
   };
 
   body.add(parts.head);
-  add(new THREE.SphereGeometry(6.5, 10, 8), RIDER.skin, parts.head);
-  const helmet = add(new THREE.SphereGeometry(7.3, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.55), RIDER.helmet, parts.head);
+  add(new THREE.SphereGeometry(6.5, 10, 8), palette.skin, parts.head);
+  const helmet = add(new THREE.SphereGeometry(7.3, 10, 8, 0, Math.PI * 2, 0, Math.PI * 0.55), palette.helmet, parts.head);
   helmet.position.y = 0.4;
-  const goggles = add(new THREE.BoxGeometry(4, 4.2, 13), RIDER.goggles, parts.head);
+  const goggles = add(new THREE.BoxGeometry(4, 4.2, 13), palette.goggles, parts.head);
   goggles.position.set(4.6, 0.5, 0);
-  const lens = add(new THREE.BoxGeometry(1.2, 3, 11), RIDER.lens, parts.head);
+  const lens = add(new THREE.BoxGeometry(1.2, 3, 11), palette.lens, parts.head);
   lens.position.set(6.8, 0.5, 0);
 
   const a = new THREE.Vector3();
@@ -94,10 +101,16 @@ export function createRider() {
     const rig = solveRig(pose, { time, speed, airborne, squash });
 
     // 2D angles are clockwise-positive in a y-down plane; flip for 3D.
-    parts.skiFront.position.copy(v(rig.front, 5.5));
-    parts.skiFront.rotation.set(0, pose.cross * 0.55, -(rig.frontAngle - pose.cross * 0.6));
-    parts.skiBack.position.copy(v(rig.back, -5.5));
-    parts.skiBack.rotation.set(0, -pose.cross * 0.55, -(rig.backAngle + pose.cross * 0.6));
+    // Skis ride on the boots, or sit together on the shoulder when carried.
+    const carry = rig.carry;
+    parts.skiFront.position.copy(v(rig.skiFront, 5.5 + carry * 4.5));
+    parts.skiFront.rotation.set(0, pose.cross * 0.55, -(rig.skiFront.angle - pose.cross * 0.6));
+    parts.skiBack.position.copy(v(rig.skiBack, -5.5 + carry * 17));
+    parts.skiBack.rotation.set(0, -pose.cross * 0.55, -(rig.skiBack.angle + pose.cross * 0.6));
+    parts.bootFront.position.copy(v(rig.front, 5));
+    parts.bootFront.rotation.set(0, 0, -rig.frontAngle * (1 - carry));
+    parts.bootBack.position.copy(v(rig.back, -5));
+    parts.bootBack.rotation.set(0, 0, -rig.backAngle * (1 - carry));
 
     place(parts.thighFront, v(rig.hip, 3.5), v(rig.kneeFront, 5));
     place(parts.shinFront, v(rig.kneeFront, 5), v(rig.ankleFront, 5));

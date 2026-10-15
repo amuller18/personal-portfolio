@@ -599,9 +599,8 @@ export default class SkiRenderer {
       const x = course.stopX(index);
       if (x < left || x > right) return;
       const reached = frame.maxProgress >= index - 0.02;
-      if (stop.kind === "start") this.drawSummit(frame.time);
       if (stop.kind === "finish") this.drawLodge(x + 560);
-      this.drawGate(x, stop, index, reached, frame.time);
+      if (stop.kind !== "start") this.drawGate(x, stop, index, reached, frame.time);
     });
   }
 
@@ -667,38 +666,6 @@ export default class SkiRenderer {
 
     const wave = Math.sin(time * 6 + index) * 3;
     this.drawFlag(leftX, topY - 2, color === "#ffffff" ? "#ff4d4d" : color, wave);
-  }
-
-  drawSummit(time) {
-    const { ctx, course } = this;
-    const z = this.camera.zoom;
-    const peakX = -330;
-    const peakY = course.groundY(peakX);
-    const x = this.sx(peakX);
-    const y = this.sy(peakY);
-    ctx.fillStyle = "#333a4d";
-    ctx.fillRect(Math.round(x), Math.round(y - 80 * z), Math.max(1, Math.round(2 * z)), Math.round(80 * z));
-    const wave = Math.sin(time * 5) * 4 * z;
-    ctx.fillStyle = "#ff4d4d";
-    ctx.fillRect(Math.round(x + 2 * z), Math.round(y - 80 * z), Math.round(28 * z + wave), Math.round(16 * z));
-
-    // Sign board is sized in screen pixels so the 8px pixel font stays crisp.
-    const signX = Math.round(this.sx(-190));
-    const signY = Math.round(this.sy(course.groundY(-190)));
-    const post = Math.round(30 * z);
-    const boardW = FONT_SIZE * 7 + 8;
-    const boardH = FONT_SIZE * 2 + 10;
-    const boardTop = signY - post - boardH;
-    ctx.fillStyle = "#6b4a2f";
-    ctx.fillRect(signX - 1, signY - post, 2, post);
-    ctx.fillStyle = "#8b6340";
-    ctx.fillRect(signX - boardW / 2, boardTop, boardW, boardH);
-    ctx.font = `${FONT_SIZE}px ${FONT}`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "top";
-    ctx.fillStyle = "#fff6d0";
-    ctx.fillText("SUMMIT", signX, boardTop + 4);
-    ctx.fillText("11,000'", signX, boardTop + 6 + FONT_SIZE);
   }
 
   drawLodge(wx) {

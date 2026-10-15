@@ -36,6 +36,20 @@ describe("course", () => {
     const liftRun = course.runs.find((run) => run.type === "lift");
     expect(stops[liftRun.index + 1].id).toBe("telaviv");
     expect(course.lifts).toHaveLength(1);
+    expect(course.runs[0].type).toBe("walk");
+    expect(stops[1].id).toBe("hustle");
+  });
+
+  it("starts with skis on the shoulder and ends the walk with them on", () => {
+    const intro = course.poseAt(0);
+    expect(intro.pose.carry).toBe(1);
+    expect(course.poseAt(1).pose.carry).toBe(0);
+    const phases = [];
+    for (let p = 0; p < 1; p += 0.01) {
+      const { phase } = course.poseAt(p);
+      if (phases[phases.length - 1] !== phase) phases.push(phase);
+    }
+    expect(phases).toEqual(["walk", "stepin", "shuffle"]);
   });
 
   it("paces runs monotonically from 0 to 1", () => {
@@ -54,10 +68,11 @@ describe("course", () => {
     course.runs.forEach((run) => {
       const drop = course.groundY(run.end) - course.groundY(run.start);
       if (run.type === "lift") expect(drop).toBeLessThan(-300);
+      else if (run.type === "walk") expect(Math.abs(drop)).toBeLessThan(1);
       else expect(drop).toBeGreaterThan(300);
     });
-    expect(course.groundY(course.finishX)).toBeGreaterThan(course.groundY(0));
-    expect(course.elevationAt(course.groundY(0))).toBeCloseTo(11000);
+    const top = Math.min(...stops.map((_, i) => course.groundY(course.stopX(i))));
+    expect(course.elevationAt(top)).toBeCloseTo(11000);
     expect(course.elevationAt(course.groundY(course.finishX))).toBeCloseTo(7760);
   });
 
@@ -108,12 +123,13 @@ describe("course", () => {
   });
 
   it("goes airborne exactly between the lip and the landing", () => {
+    const base = course.jumps[0].run;
     const lipF = 0.28;
-    expect(course.poseAt(lipF - 0.01).airborne).toBe(false);
-    expect(course.poseAt(lipF + 0.01).airborne).toBe(true);
-    expect(course.poseAt(TOUCHDOWN - 0.01).airborne).toBe(true);
-    expect(course.poseAt(TOUCHDOWN + 0.01).airborne).toBe(false);
-    expect(course.kickerBump((KICKER.lip) * course.runLength)).toBeCloseTo(KICKER.height);
+    expect(course.poseAt(base + lipF - 0.01).airborne).toBe(false);
+    expect(course.poseAt(base + lipF + 0.01).airborne).toBe(true);
+    expect(course.poseAt(base + TOUCHDOWN - 0.01).airborne).toBe(true);
+    expect(course.poseAt(base + TOUCHDOWN + 0.01).airborne).toBe(false);
+    expect(course.kickerBump(course.jumps[0].lipX)).toBeCloseTo(KICKER.height);
   });
 
   it("covers every distinct trick before repeating", () => {
@@ -123,25 +139,29 @@ describe("course", () => {
 });
 
 describe("SkiModel", () => {
+  const firstDescent = course.jumps[0].run;
+
   it("skis to a checkpoint without overshooting and shows its card", () => {
     const model = new SkiModel(course);
-    model.setTarget(1);
+    model.teleport(firstDescent);
+    model.setTarget(firstDescent + 1);
     let maxSeen = 0;
     for (let t = 0; t < 10; t += 1 / 60) {
       model.step(1 / 60);
       maxSeen = Math.max(maxSeen, model.progress);
     }
-    expect(maxSeen).toBeLessThanOrEqual(1);
-    expect(model.progress).toBe(1);
+    expect(maxSeen).toBeLessThanOrEqual(firstDescent + 1);
+    expect(model.progress).toBe(firstDescent + 1);
     const snapshot = model.getSnapshot();
-    expect(snapshot.activeStop).toBe(1);
+    expect(snapshot.activeStop).toBe(firstDescent + 1);
     expect(snapshot.score).toBe(course.jumps[0].trick.points);
     expect(snapshot.landedCount).toBe(1);
   });
 
   it("takes a couple of seconds per run so the trick is visible", () => {
     const model = new SkiModel(course);
-    model.setTarget(1);
+    model.teleport(firstDescent);
+    model.setTarget(firstDescent + 1);
     const seconds = runUntilSettled(model);
     expect(seconds).toBeGreaterThan(1.5);
     expect(seconds).toBeLessThan(4);
@@ -159,7 +179,8 @@ describe("SkiModel", () => {
 
   it("reports the trick while airborne and the points on landing", () => {
     const model = new SkiModel(course);
-    model.setTarget(1);
+    model.teleport(firstDescent);
+    model.setTarget(firstDescent + 1);
     let sawTrick = false;
     let sawLanding = false;
     for (let t = 0; t < 6; t += 1 / 60) {
@@ -167,7 +188,7 @@ describe("SkiModel", () => {
       const snapshot = model.getSnapshot();
       if (snapshot.trick === 0) sawTrick = true;
       if (snapshot.landed === 0) sawLanding = true;
-      if (snapshot.activeStop === 0 && model.progress > 0.5) throw new Error("card shown mid-run");
+      if (snapshot.activeStop === firstDescent && model.progress > firstDescent + 0.5) throw new Error("card shown mid-run");
     }
     expect(sawTrick).toBe(true);
     expect(sawLanding).toBe(true);

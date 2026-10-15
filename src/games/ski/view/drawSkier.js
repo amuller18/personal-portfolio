@@ -32,10 +32,19 @@ function stroke(ctx, points, width, color) {
   ctx.stroke();
 }
 
-function drawSki(ctx, foot, angle, color) {
+function drawBoot(ctx, foot, angle) {
   ctx.save();
   ctx.translate(foot.x, foot.y);
   ctx.rotate(angle);
+  ctx.fillStyle = RIDER.boot;
+  ctx.fillRect(-5, -7, 11, 7);
+  ctx.restore();
+}
+
+function drawSki(ctx, ski, color) {
+  ctx.save();
+  ctx.translate(ski.x, ski.y);
+  ctx.rotate(ski.angle);
   stroke(
     ctx,
     [
@@ -46,8 +55,6 @@ function drawSki(ctx, foot, angle, color) {
     3,
     color,
   );
-  ctx.fillStyle = RIDER.boot;
-  ctx.fillRect(-5, -7, 11, 7);
   ctx.restore();
 }
 
@@ -72,7 +79,8 @@ export default function drawSkier(ctx, { x, y, angle, pose, zoom, time, speed, a
   ctx.translate(0, PIVOT);
 
   // Far side first: back ski, back leg, back arm.
-  drawSki(ctx, rig.back, rig.backAngle, RIDER.skiBack);
+  if (rig.carry < 0.5) drawSki(ctx, rig.skiBack, RIDER.skiBack);
+  drawBoot(ctx, rig.back, rig.backAngle * (1 - rig.carry));
   stroke(ctx, [rig.hip, rig.kneeBack, rig.ankleBack], 7, RIDER.pantsShade);
   stroke(ctx, [rig.shoulder, rig.backHand], 5, RIDER.jacketShade);
 
@@ -97,8 +105,13 @@ export default function drawSkier(ctx, { x, y, angle, pose, zoom, time, speed, a
   ctx.fillRect(head.x + 1.5, head.y - 1.5, 5, 3);
 
   // Near side: front ski, front leg, front arm with pole.
-  drawSki(ctx, rig.front, rig.frontAngle, RIDER.ski);
+  if (rig.carry < 0.5) drawSki(ctx, rig.skiFront, RIDER.ski);
+  drawBoot(ctx, rig.front, rig.frontAngle * (1 - rig.carry));
   stroke(ctx, [hip, rig.kneeFront, rig.ankleFront], 7, RIDER.pants);
+  if (rig.carry >= 0.5) {
+    drawSki(ctx, rig.skiBack, RIDER.skiBack);
+    drawSki(ctx, rig.skiFront, RIDER.ski);
+  }
   stroke(ctx, [shoulder, rig.hand], 5, RIDER.jacketShade);
   stroke(ctx, [rig.hand, rig.tipFront], 1.8, RIDER.pole);
   ctx.fillStyle = RIDER.pole;

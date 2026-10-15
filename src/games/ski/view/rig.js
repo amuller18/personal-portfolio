@@ -29,15 +29,22 @@ export function kneeFor(hip, ankle) {
 
 export function solveRig(pose, { time = 0, speed = 0, airborne = false, squash = 0 } = {}) {
   const sit = clamp01(pose.sit || 0);
-  const carve = airborne ? 0 : (0.15 + speed * 0.3) * (1 - sit);
+  const carry = clamp01(pose.carry || 0);
+  const walk = clamp01(pose.walk || 0);
+  const stride = pose.stride || 0;
+  const carve = airborne ? 0 : (0.15 + speed * 0.3) * (1 - sit) * (1 - carry);
   const bend = clamp01(Math.max(pose.tuck, carve) + squash * 0.6);
   const lift = pose.grab * 6 + pose.tuck * 3;
   const swing = Math.sin(time * 2.4) * 3 * sit;
 
-  const standHip = { x: -3 - bend * 4, y: -(35 - bend * 13) };
+  // Walking: feet trade places, lifting on the forward swing; hips bob.
+  const step = Math.sin(stride) * 7 * walk;
+  const liftFront = Math.max(0, Math.cos(stride)) * 3 * walk;
+  const liftBack = Math.max(0, -Math.cos(stride)) * 3 * walk;
+  const standHip = { x: -3 - bend * 4, y: -(35 - bend * 13) - Math.abs(Math.cos(stride)) * 1.2 * walk };
   const hip = mix(standHip, { x: -8, y: -30 }, sit);
-  const front = mix({ x: 4 + pose.split * 14, y: -pose.split * 4 - lift }, { x: 13, y: -4 + swing }, sit);
-  const back = mix({ x: -4 - pose.split * 14, y: -pose.split * 4 - lift }, { x: 11, y: -2 - swing }, sit);
+  const front = mix({ x: 4 + pose.split * 14 + step, y: -pose.split * 4 - lift - liftFront }, { x: 13, y: -4 + swing }, sit);
+  const back = mix({ x: -4 - pose.split * 14 - step, y: -pose.split * 4 - lift - liftBack }, { x: 11, y: -2 - swing }, sit);
   const frontAngle = -pose.split * 0.45 + pose.cross * 0.6 + sit * 0.35;
   const backAngle = pose.split * 0.45 - pose.cross * 0.6 + sit * 0.3;
 
@@ -52,15 +59,34 @@ export function solveRig(pose, { time = 0, speed = 0, airborne = false, squash =
   const raised = { x: shoulder.x + 8, y: shoulder.y - 14 };
   const grabbed = { x: front.x + 8, y: front.y - 4 };
   const onBar = { x: shoulder.x + 11, y: shoulder.y + 6 };
-  const hand = mix(mix(mix(rest, raised, pose.arms), grabbed, pose.grab), onBar, sit);
-  const backHand = mix(mix(rest, raised, pose.arms), onBar, sit);
+  const onShoulder = { x: shoulder.x + 9, y: shoulder.y + 1 };
+  const armSwing = { x: rest.x - 6 - Math.sin(stride) * 6 * walk, y: rest.y + 4 };
+  const hand = mix(mix(mix(mix(rest, raised, pose.arms), grabbed, pose.grab), onBar, sit), onShoulder, carry);
+  const backHand = mix(mix(mix(rest, raised, pose.arms), onBar, sit), armSwing, carry);
 
   const tipFor = (h) =>
     mix(
-      mix(mix({ x: h.x - 26, y: h.y + 24 }, { x: h.x + 16, y: h.y - 22 }, pose.arms), { x: h.x - 30, y: h.y - 4 }, Math.max(pose.grab, pose.tuck * 0.6)),
-      { x: h.x + 3, y: h.y + 34 },
-      sit,
+      mix(
+        mix(mix({ x: h.x - 26, y: h.y + 24 }, { x: h.x + 16, y: h.y - 22 }, pose.arms), { x: h.x - 30, y: h.y - 4 }, Math.max(pose.grab, pose.tuck * 0.6)),
+        { x: h.x + 3, y: h.y + 34 },
+        sit,
+      ),
+      { x: h.x + 2, y: h.y + 36 },
+      carry,
     );
+
+  // Skis: on the boots, or both together over the shoulder (tips up front).
+  const carried = { x: shoulder.x + 6, y: shoulder.y - 1, angle: -1.15 };
+  const skiFront = {
+    x: lerp(front.x, carried.x, carry),
+    y: lerp(front.y, carried.y, carry),
+    angle: lerp(frontAngle, carried.angle, carry),
+  };
+  const skiBack = {
+    x: lerp(back.x, carried.x - 1.5, carry),
+    y: lerp(back.y, carried.y + 2, carry),
+    angle: lerp(backAngle, carried.angle + 0.04, carry),
+  };
 
   const flutter = 1 + speed * 2.5;
   const neck = { x: shoulder.x - 2, y: shoulder.y - 2 };
@@ -72,7 +98,10 @@ export function solveRig(pose, { time = 0, speed = 0, airborne = false, squash =
 
   return {
     sit,
+    carry,
     bend,
+    skiFront,
+    skiBack,
     hip,
     shoulder,
     head,

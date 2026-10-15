@@ -4,6 +4,10 @@
  * so blending stays smooth even at full speed. Under-damped springs give the
  * playful overshoot; a separate zoom spring adds punch on big moments.
  *
+ *   intro             slow hero orbit with the title card
+ *   walking to lift   side tracking shot, then close on stepping into skis
+ *   in the lift line  over the shoulder toward the lift; on arrival it pans
+ *                     right onto the lift house wall
  *   at a board        locked square-on, filling ~90% of the screen
  *   at other stops    slow hero orbit beside the chapter card
  *   chairlift         scoop from the side, look up the cable, wide side-on
@@ -92,13 +96,12 @@ export default class Director {
     const surface = idle ? this.surfaces.get(nearest) : null;
     if (surface) {
       // Square-on to the board, close enough to fill the screen.
-      this.tmp.copy(surface.center);
-      this.tmp.z += this.boardDistance(aspect);
+      this.tmp.copy(surface.center).addScaledVector(surface.normal, this.boardDistance(aspect));
       target.offset.copy(this.tmp).sub(this.rider);
       target.look.copy(surface.center).sub(this.rider);
       target.fov = BOARD_FOV;
-      target.stiffness = 9;
-      target.ratio = 0.55;
+      target.stiffness = 5;
+      target.ratio = 0.85;
       target.frameY = -0.035;
       return "board";
     }
@@ -122,6 +125,25 @@ export default class Director {
     }
 
     switch (skier.phase) {
+      case "walk":
+        target.offset.set(30, 70, 270);
+        target.look.set(50, 34, 0);
+        target.fov = 46;
+        target.stiffness = 5;
+        return "walk";
+      case "stepin":
+        target.offset.set(70, 46, 190);
+        target.look.set(0, 20, 0);
+        target.fov = 44;
+        target.stiffness = 5;
+        return "stepin";
+      case "shuffle":
+        // Over the shoulder down the lift line; the lift house is ahead-right.
+        target.offset.set(-210, 90, -110);
+        target.look.set(230, 50, 140);
+        target.fov = 50;
+        target.stiffness = 5;
+        return "shuffle";
       case "load":
         target.offset.set(-60, 70, 250);
         target.look.set(30, 34, 0);
@@ -212,26 +234,25 @@ export default class Director {
       target.look.set(170, 10, 0);
       target.fov = 58 + 14 * speedNorm;
       target.roll = -0.05 * speedNorm;
-      target.stiffness = 20;
+      target.stiffness = 12;
       return "chase";
     }
     target.offset.set(220, 48, -100);
     target.look.set(0, 30, 0);
     target.fov = 54;
-    target.stiffness = 14;
+    target.stiffness = 8;
     return "track";
   }
 
   /* Zoom punches on the big moments. */
   react(shot, phase) {
     if (shot !== this.shot) {
-      if (shot === "board") this.kick(26);
-      else if (this.shot === "board") this.kick(30);
+      if (shot === "board") this.kick(10);
+      else if (this.shot === "board") this.kick(12);
     }
     if (phase !== this.phase) {
-      if (phase === "air") this.kick(-10);
-      if (this.phase === "air") this.kick(14);
-      if (phase === "lift") this.kick(-8);
+      if (phase === "air") this.kick(-7);
+      if (this.phase === "air") this.kick(9);
     }
   }
 
@@ -266,7 +287,7 @@ export default class Director {
       springVector(this.offset, this.offsetVelocity, t.offset, t.stiffness, damping, step, this.scratch);
       springVector(this.look, this.lookVelocity, t.look, t.stiffness * 1.4, dampingFor(t.stiffness * 1.4, 1), step, this.scratch);
       springScalar(this.fov, t.fov, 10, dampingFor(10, 1), step);
-      springScalar(this.zoom, 0, 36, dampingFor(36, 0.35), step);
+      springScalar(this.zoom, 0, 24, dampingFor(24, 0.6), step);
       springScalar(this.roll, t.roll, 10, dampingFor(10, 1), step);
       const k = 1 - Math.exp(-3 * dt);
       this.frameX += (t.frameX - this.frameX) * k;
@@ -277,8 +298,10 @@ export default class Director {
     const floor = this.heightAt(camera.position.x, camera.position.z) + 12;
     camera.position.y = Math.max(camera.position.y, floor);
     if (shake > 0) {
-      camera.position.x += (Math.random() - 0.5) * shake * 18;
-      camera.position.y += (Math.random() - 0.5) * shake * 18;
+      // A smooth decaying wobble rather than random jitter.
+      this.shakeTime = (this.shakeTime || 0) + dt;
+      camera.position.y += Math.sin(this.shakeTime * 34) * shake * 9;
+      camera.position.x += Math.sin(this.shakeTime * 27 + 1) * shake * 5;
     }
     this.tmp.copy(this.rider).add(this.look);
     camera.up.set(0, 1, 0);
