@@ -9,13 +9,15 @@
  */
 import * as THREE from "three";
 import { CSS3DObject, CSS3DRenderer } from "three/examples/jsm/renderers/CSS3DRenderer.js";
-import { clamp, clamp01, lerp, smoothRange } from "../../../shared/math";
-import { SURFACE_PX_HEIGHT, SURFACE_WORLD_HEIGHT, surfaceAspect } from "../surfaces";
+import { CLIFF } from "../../model/course";
+import { REST_POSE } from "../../model/tricks";
+import { clamp, clamp01, lerp, smoothRange, smoothstep } from "../../../shared/math";
+import { SURFACE_PX_HEIGHT, SURFACE_SPECS, surfaceAspect } from "../surfaces";
 import Director from "./director";
 import { createBursts, createSnowfall } from "./particles3d";
 import { RIDER } from "../drawSkier";
-import { REST_POSE } from "../../model/tricks";
 import { createRider } from "./rider3d";
+import { buildWorld } from "./world3d";
 
 /* Other skiers waiting in the lift line. */
 const QUEUE_PALETTES = [
@@ -23,7 +25,6 @@ const QUEUE_PALETTES = [
   { ...RIDER, jacket: "#2bd9a0", jacketShade: "#1f9e77", helmet: "#0b1030", scarf: "#ff8a3d", ski: "#c77dff", skiBack: "#9a5ad0" },
   { ...RIDER, jacket: "#c77dff", jacketShade: "#9a5ad0", helmet: "#ff4d4d", scarf: "#ffd23f", ski: "#3a63d8", skiBack: "#2a4aa8" },
 ];
-import { buildWorld } from "./world3d";
 
 const SKY = [
   { at: 0, top: "#1d2466", bottom: "#ffb38a", sun: "#ffc59a" },
@@ -141,10 +142,9 @@ export default class SkiRenderer3D {
         mount.className = `ski-surface ski-surface--${surface.kind}`;
         const object = new CSS3DObject(mount);
         object.position.copy(surface.center);
-        object.rotation.y = surface.rotationY;
-        object.scale.setScalar(SURFACE_WORLD_HEIGHT / SURFACE_PX_HEIGHT);
+        object.rotation.set(0, surface.rotationY, surface.rotationZ || 0);
         this.cssScene.add(object);
-        this.surfaceObjects.set(index, { object, mount, opacity: -1, active: null });
+        this.surfaceObjects.set(index, { object, mount, surface, opacity: -1, active: null });
         this.surfaceMounts[index] = mount;
       });
     }
@@ -175,16 +175,19 @@ export default class SkiRenderer3D {
     this.camera.aspect = this.width / this.height;
     this.camera.updateProjectionMatrix();
 
-    // Boards take the viewport's shape so they can fill it.
-    const aspect = surfaceAspect(this.width, this.height);
-    const pxWidth = Math.round(SURFACE_PX_HEIGHT * aspect);
-    const worldWidth = (pxWidth * SURFACE_WORLD_HEIGHT) / SURFACE_PX_HEIGHT;
-    this.world.setSurfaceSize(worldWidth, SURFACE_WORLD_HEIGHT);
-    this.director.surfaceSize = { width: worldWidth, height: SURFACE_WORLD_HEIGHT };
-    this.surfaceObjects.forEach(({ mount }) => {
-      mount.style.width = `${pxWidth}px`;
-      mount.style.height = `${SURFACE_PX_HEIGHT}px`;
-      mount.classList.toggle("is-portrait", aspect < 0.95);
+    // Boards take the viewport's shape so they can fill it (unless the board
+    // has a fixed shape, like the ski).
+    this.world.surfaces.forEach((surface, index) => {
+      const spec = SURFACE_SPECS[surface.kind];
+      const aspect = surfaceAspect(this.width, this.height, surface.kind);
+      const pxWidth = Math.round(SURFACE_PX_HEIGHT * aspect);
+      surface.resize(spec.height * aspect, spec.height);
+      const entry = this.surfaceObjects.get(index);
+      if (!entry) return;
+      entry.object.scale.setScalar(spec.height / SURFACE_PX_HEIGHT);
+      entry.mount.style.width = `${pxWidth}px`;
+      entry.mount.style.height = `${SURFACE_PX_HEIGHT}px`;
+      entry.mount.classList.toggle("is-portrait", !spec.aspect && aspect < 0.95);
     });
     if (this.css) this.css.setSize(this.width, this.height);
   }
@@ -203,8 +206,8 @@ export default class SkiRenderer3D {
     this.updateEvents(frame, dt);
 
     const { root } = this.rider;
-    root.position.set(skier.x, -skier.y, 0);
-    root.rotation.set(0, 0, -skier.angle);
+    root.position.set(skier.x, -skier.y, skier.z || 0);
+    root.rotation.set(0, skier.yaw || 0, -skier.angle);
     this.rider.update({
       pose: skier.pose,
       time: frame.time,
@@ -237,16 +240,66 @@ export default class SkiRenderer3D {
     this.sun.target.position.set(skier.x, -skier.y, 0);
 
     this.renderer.render(this.scene, this.camera);
-    this.renderSurfaces(frame);
+    this.renderSurfaces(frame, dt);
+    this.updateLostSki(frame);
+  }
+
+  /* The ski that comes off in the cliff crash: flies off on impact, lands
+   * upright in the snow, and flies back when Alex picks it up. */
+  updateLostSki(frame) {
+    this.world.surfaces.forEach((surface, index) => {
+      const { prop } = surface;
+      if (!prop) return;
+      const run = this.course.runs[index - 1];
+      const p = frame.progress;
+      let visible = false;
+      let spin = 0;
+      const position = this.skiPos || (this.skiPos = new THREE.Vector3());
+      position.copy(prop.home);
+      if (p >= run.index && p < index) {
+        const f = p - run.index;
+        if (f >= CLIFF.fall) {
+          visible = true;
+          const t = Math.min(1, (f - CLIFF.fall) / (CLIFF.tumble - CLIFF.fall));
+          const flight = smoothRange(t, 0.06, 0.55);
+          const ix = run.cliff.impactX;
+          position.set(ix, -this.course.groundY(ix) + 20, 0).lerp(prop.home, flight);
+          position.y += 140 * Math.sin(Math.PI * flight);
+          spin = (1 - flight) * Math.PI * 4;
+        }
+      } else if (p >= index && p < index + 1) {
+        const lost = frame.skier.pose.lostSki || 0;
+        visible = lost > 0.01;
+        position.set(frame.skier.x + 10, -frame.skier.y + 30, frame.skier.z || 0).lerp(prop.home, smoothstep(lost));
+      }
+      prop.site.visible = visible;
+      prop.site.position.copy(position);
+      prop.site.rotation.z = prop.rotationZ + spin;
+    });
   }
 
   /* Boards fade in only around their own stop, so the DOM layer never draws
    * over unrelated 3D content, and only the one you're at is clickable. */
-  renderSurfaces(frame) {
+  renderSurfaces(frame, dt) {
     if (!this.css) return;
     this.surfaceObjects.forEach((entry, index) => {
-      const { object, mount } = entry;
+      const { object, mount, surface } = entry;
       const distance = Math.abs(frame.progress - index);
+      const near = distance < 0.05 && Math.abs(frame.velocity) < 0.3;
+
+      // The trail sign grows from a small sign into a full-screen board.
+      if (surface.expand) {
+        const ex = surface.expand;
+        const target = near ? 1 : 0;
+        ex.value += (target - ex.value) * (1 - Math.exp(-dt * (this.reducedMotion ? 60 : 2.6)));
+        const e = smoothstep(ex.value);
+        const scale = lerp(ex.smallScale, 1, e);
+        const y = lerp(ex.smallY, ex.fullY, e);
+        ex.site.scale.setScalar(scale);
+        ex.site.position.y = y;
+        object.scale.setScalar((scale * SURFACE_SPECS[surface.kind].height) / SURFACE_PX_HEIGHT);
+        object.position.y = y;
+      }
       const opacity = Math.round((1 - smoothRange(distance, 0.03, 0.11)) * 100) / 100;
       object.visible = opacity > 0.01;
       // Only touch the DOM when something changed; style writes are costly.
@@ -254,7 +307,7 @@ export default class SkiRenderer3D {
         mount.style.opacity = String(opacity);
         entry.opacity = opacity;
       }
-      const active = distance < 0.05 && Math.abs(frame.velocity) < 0.3;
+      const active = near;
       if (active !== entry.active) {
         mount.classList.toggle("is-active", active);
         mount.style.pointerEvents = active ? "auto" : "none";
@@ -312,9 +365,13 @@ export default class SkiRenderer3D {
     this.squash = Math.max(0, this.squash - dt * 2.8);
 
     if (prev.airborne && !skier.airborne && frame.velocity > 0) {
-      this.burst(x, y, 70, { spread: 220, lift: 360 });
-      this.shake = 0.3;
+      const crash = skier.phase === "tumble";
+      this.burst(x, y, crash ? 160 : 70, { spread: crash ? 320 : 220, lift: crash ? 460 : 360 });
+      this.shake = crash ? 0.6 : 0.3;
       this.squash = 1;
+    }
+    if (skier.phase === "tumble" && Math.random() < 0.5) {
+      this.burst(x, y, 4, { spread: 140, lift: 220 });
     }
     if (!prev.airborne && skier.airborne && frame.velocity > 0) {
       this.burst(x, y, 24, { spread: 110, lift: 200, push: 220 });

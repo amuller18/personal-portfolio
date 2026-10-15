@@ -1,6 +1,6 @@
 import { storyOrder } from "../../../data/story";
 import { buildStoryStops } from "../../shared/storyStops";
-import { KICKER, LANDING, LIFT, TOUCHDOWN, createCourse, paceRun } from "./course";
+import { KICKER, LANDING, LIFT, LODGE, TOUCHDOWN, createCourse, paceRun } from "./course";
 import SkiModel from "./SkiModel";
 import { FINALE, TRICKS } from "./tricks";
 
@@ -30,8 +30,20 @@ describe("story stops", () => {
 
 describe("course", () => {
   it("has one jump per descent, a chairlift up to the trail map, and ends on the finale", () => {
-    const descents = course.runs.filter((run) => run.type === "descent");
-    expect(course.jumps).toHaveLength(descents.length);
+    const kickers = course.runs.filter((run) => run.type === "descent" || run.type === "lodge");
+    expect(course.jumps).toHaveLength(kickers.length);
+    expect(course.runs.map((run) => run.type)).toEqual([
+      "walk",
+      "lift",
+      "glade",
+      "cliff",
+      "descent",
+      "lodge",
+      "descent",
+      "descent",
+      "descent",
+    ]);
+    expect(course.jumps[0].trick.name).toBe("Three-Sixty");
     expect(course.jumps[course.jumps.length - 1].trick).toBe(FINALE);
     const liftRun = course.runs.find((run) => run.type === "lift");
     expect(stops[liftRun.index + 1].id).toBe("telaviv");
@@ -82,7 +94,7 @@ describe("course", () => {
       expect(pose.airborne).toBe(false);
       expect(pose.x).toBeCloseTo(course.stopX(i));
       expect(pose.y).toBeCloseTo(course.groundY(pose.x));
-      expect(pose.pose.rotation).toBe(0);
+      expect(Math.abs(pose.pose.rotation % 360)).toBe(0);
     }
   });
 
@@ -123,13 +135,49 @@ describe("course", () => {
   });
 
   it("goes airborne exactly between the lip and the landing", () => {
-    const base = course.jumps[0].run;
-    const lipF = 0.28;
-    expect(course.poseAt(base + lipF - 0.01).airborne).toBe(false);
-    expect(course.poseAt(base + lipF + 0.01).airborne).toBe(true);
-    expect(course.poseAt(base + TOUCHDOWN - 0.01).airborne).toBe(true);
-    expect(course.poseAt(base + TOUCHDOWN + 0.01).airborne).toBe(false);
+    course.jumps.forEach((jump) => {
+      expect(course.poseAt(jump.run + jump.takeoff - 0.01).airborne).toBe(false);
+      expect(course.poseAt(jump.run + jump.takeoff + 0.01).airborne).toBe(true);
+      expect(course.poseAt(jump.run + jump.touchdown - 0.01).airborne).toBe(true);
+      expect(course.poseAt(jump.run + jump.touchdown + 0.01).airborne).toBe(false);
+    });
     expect(course.kickerBump(course.jumps[0].lipX)).toBeCloseTo(KICKER.height);
+  });
+
+  it("weaves through the glade and arrives back on the line at the sign", () => {
+    const glade = course.runs.find((run) => run.type === "glade");
+    let widest = 0;
+    for (let f = 0; f <= 1; f += 0.01) widest = Math.max(widest, Math.abs(course.poseAt(glade.index + f).z));
+    expect(widest).toBeGreaterThan(60);
+    expect(course.poseAt(glade.index + 1).z).toBeCloseTo(0);
+  });
+
+  it("drops the cliff, tumbles, and stops sprawled with a ski missing", () => {
+    const cliff = course.runs.find((run) => run.type === "cliff");
+    const phases = [];
+    for (let f = 0; f <= 1; f += 0.01) {
+      const { phase } = course.poseAt(cliff.index + f);
+      if (phases[phases.length - 1] !== phase) phases.push(phase);
+    }
+    expect(phases).toEqual(["cliff-approach", "cliff-air", "tumble", "rest"]);
+    const rest = course.poseAt(cliff.index + 1);
+    expect(rest.pose.sprawl).toBe(1);
+    expect(rest.pose.lostSki).toBe(1);
+    expect(course.groundY(cliff.cliff.lipX + 80) - course.groundY(cliff.cliff.lipX)).toBeGreaterThan(200);
+    // Getting up on the next run brings the ski back.
+    const after = course.poseAt(cliff.index + 1.2);
+    expect(after.pose.sprawl).toBe(0);
+    expect(after.pose.lostSki).toBe(0);
+  });
+
+  it("walks into the lodge with skis off, and back out to click in", () => {
+    const lodge = course.runs.find((run) => run.type === "lodge");
+    const inside = course.poseAt(lodge.index + 1);
+    expect(inside.z).toBeCloseTo(LODGE.insideZ);
+    expect(inside.pose.noSkis).toBe(1);
+    const back = course.poseAt(lodge.index + 1.3);
+    expect(back.z).toBeCloseTo(0);
+    expect(back.pose.noSkis).toBe(0);
   });
 
   it("covers every distinct trick before repeating", () => {

@@ -7,10 +7,10 @@
  */
 import * as THREE from "three";
 import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js";
-import { KICKER, LIFT } from "../../model/course";
-import { clamp, seededRandom, smoothRange } from "../../../shared/math";
+import { CLIFF, KICKER, LIFT, LODGE } from "../../model/course";
+import { clamp, lerp, seededRandom, smoothRange } from "../../../shared/math";
 import { GATE_COLORS } from "../palette";
-import { SURFACE_MAX_WIDTH, SURFACE_WORLD_HEIGHT, surfaceKindFor } from "../surfaces";
+import { SURFACE_MAX_WIDTH, SURFACE_SPECS, SURFACE_WORLD_HEIGHT, surfaceKindFor } from "../surfaces";
 
 const FONT = '"Press Start 2P", ui-monospace, monospace';
 const LANE = 60;
@@ -95,7 +95,7 @@ export function buildWorld(course) {
   const minX = course.startX - 2600;
   const maxX = course.endX + 2600;
 
-  function heightAt(x, z) {
+  function naturalHeight(x, z) {
     const az = Math.abs(z);
     let h = -course.baseY(x);
     h += course.kickerBump(x) * (1 - smoothRange(az, LANE * 0.75, LANE * 1.25));
@@ -104,12 +104,28 @@ export function buildWorld(course) {
     return h;
   }
 
+  /* Level building pads (the lodge) across the slope, feathered at the edges. */
+  function heightAt(x, z) {
+    const h = naturalHeight(x, z);
+    let weight = 0;
+    course.pads.forEach((pad) => {
+      const dx = Math.max(pad.x0 - x, 0, x - pad.x1);
+      const dz = Math.max(pad.z0 - z, 0, z - pad.z1);
+      weight = Math.max(weight, 1 - smoothRange(Math.hypot(dx, dz), 0, 140));
+    });
+    return weight > 0 ? lerp(h, -course.baseY(x), weight) : h;
+  }
+
+  const isSteep = (x) => Math.abs(course.baseY(x + 4) - course.baseY(x - 4)) / 8 > 1.2;
+  const cliffRuns = course.runs.filter((run) => run.cliff);
+
   const xs = [];
   for (let x = minX; x <= maxX; ) {
     xs.push(x);
     const at = course.descentAt(x);
     const nearKicker = Boolean(at) && at.u > KICKER.start - 0.02 && at.u < KICKER.end + 0.01;
-    x += nearKicker ? 4 : 22;
+    const nearCliff = cliffRuns.some((run) => x > run.cliff.lipX - 30 && x < run.cliff.lipX + 100);
+    x += nearKicker ? 4 : nearCliff ? 6 : 22;
   }
   const half = [0, 18, 36, 52, 66, 82, 110, 150, 210, 290, 400, 560, 780, 1060, 1420, 1900, 2600];
   const zs = [...half.slice(1).reverse().map((z) => -z), ...half];
@@ -129,7 +145,8 @@ export function buildWorld(course) {
       positions[k + 1] = heightAt(x, z);
       positions[k + 2] = z;
       const az = Math.abs(z);
-      if (bump > 1 && az < LANE) tmp.copy(kicker);
+      if (isSteep(x)) tmp.copy(rock).lerp(snow, 0.15 * noise(x, z * 2) + 0.1);
+      else if (bump > 1 && az < LANE) tmp.copy(kicker);
       else if (az < LANE) tmp.copy(groomed);
       else tmp.copy(snow).lerp(rock, smoothRange(noise(x * 1.7, z * 1.3), 0.55, 1.1) * smoothRange(az, 500, 1400) * 0.7);
       tmp.toArray(colors, k);
@@ -161,8 +178,11 @@ export function buildWorld(course) {
   const trackPoints = [];
   for (let x = 0; x < course.finishX + 400; x += 6) {
     if (!course.isSkied(x) || !course.isSkied(x + 6)) continue;
-    [-4.5, 4.5].forEach((z) => {
-      trackPoints.push(x, heightAt(x, z) + 0.6, z, x + 6, heightAt(x + 6, z) + 0.6, z);
+    // Two grooves that follow the rider's line (it weaves in the glade).
+    const z0 = course.lineZ(x);
+    const z1 = course.lineZ(x + 6);
+    [-4.5, 4.5].forEach((dz) => {
+      trackPoints.push(x, heightAt(x, z0 + dz) + 0.6, z0 + dz, x + 6, heightAt(x + 6, z1 + dz) + 0.6, z1 + dz);
     });
     trackXs.push(x);
   }
@@ -182,22 +202,42 @@ export function buildWorld(course) {
     const kind = surfaceKindFor(stop);
     if (!kind) return;
     const sx = stopXs[index];
-    if (kind === "station") {
-      // Lift house to the right of the lift line (+z), its wall facing the queue.
-      placements.push({ index, kind, stop, cx: sx - 120, faceZ: 300, facing: -1 });
-    } else {
-      // Trail map on the left, just past the stop.
-      placements.push({ index, kind, stop, cx: sx + 40 + SURFACE_MAX_WIDTH / 2, faceZ: BOARD_Z, facing: 1 });
+    const run = course.runs[index - 1];
+    const base = { index, kind, stop, facing: 1 };
+    switch (kind) {
+      case "station":
+        // Lift house to the right of the lift line (+z), its wall facing the queue.
+        placements.push({ ...base, cx: sx - 120, faceZ: 300, facing: -1 });
+        break;
+      case "treeSign":
+        // Small trail sign at the bottom of the glade, on the left.
+        placements.push({ ...base, cx: sx + 120, faceZ: -100 });
+        break;
+      case "ski":
+        // The lost ski, stuck upright in the snow just past where Alex stopped.
+        placements.push({ ...base, cx: run.cliff.skiX, faceZ: run.cliff.skiZ });
+        break;
+      case "menu":
+        // Chalkboard menu on the lodge's back wall, inside.
+        placements.push({ ...base, cx: sx, faceZ: LODGE.frontZ - LODGE.depth + 14 });
+        break;
+      default:
+        // Trail map and jumbotron: on the left, just past the stop.
+        placements.push({ ...base, cx: sx + 40 + SURFACE_MAX_WIDTH / 2, faceZ: kind === "jumbotron" ? -170 : BOARD_Z });
     }
   });
-  const clearZones = placements.map(({ cx, faceZ, facing }) => ({
-    x0: cx - SURFACE_MAX_WIDTH / 2 - 240,
-    x1: cx + SURFACE_MAX_WIDTH / 2 + 240,
-    z0: Math.min(faceZ + facing * 700, faceZ - facing * 420),
-    z1: Math.max(faceZ + facing * 700, faceZ - facing * 420),
-  }));
-  // Open space around the base area where the intro happens.
+  const clearZones = placements
+    .filter((place) => place.kind !== "menu")
+    .map(({ cx, faceZ, facing }) => ({
+      x0: cx - SURFACE_MAX_WIDTH / 2 - 240,
+      x1: cx + SURFACE_MAX_WIDTH / 2 + 240,
+      z0: Math.min(faceZ + facing * 700, faceZ - facing * 420),
+      z1: Math.max(faceZ + facing * 700, faceZ - facing * 420),
+    }));
+  // Open space around the base area where the intro happens, and the lodge.
   clearZones.push({ x0: -420, x1: stopXs[1] + 80, z0: -420, z1: 420 });
+  course.pads.forEach((pad) => clearZones.push({ x0: pad.x0 - 120, x1: pad.x1 + 120, z0: pad.z0 - 120, z1: pad.z1 + 380 }));
+  const inClearZone = (x, z) => clearZones.some((zone) => x > zone.x0 && x < zone.x1 && z > zone.z0 && z < zone.z1);
 
   /* ---------- Trees (instanced) ---------- */
 
@@ -231,10 +271,35 @@ export function buildWorld(course) {
     const nearJump = Boolean(at) && at.u > 0.3 && at.u < 0.97 && Math.abs(z) < 380;
     const liftLine = Boolean(run) && run.type === "lift" && Math.abs(z - DOWN_LINE_Z / 2) < 210;
     const nearLodge = Math.abs(x - (course.finishX + 560)) < 260 && z < 0 && z > -520;
-    const nearBoard = clearZones.some((zone) => x > zone.x0 && x < zone.x1 && z > zone.z0 && z < zone.z1);
+    const nearBoard = inClearZone(x, z);
     if (nearGate || nearJump || liftLine || nearLodge || nearBoard) continue;
     treeSpots.push({ x, z, scale: 0.7 + rand() * 0.9, yaw: rand() * Math.PI, shade: rand() });
   }
+
+  // The glade: dense trees on both sides of the weaving line, plus a tree on
+  // the far side of every turn so the line visibly weaves around it.
+  const grand = seededRandom(404);
+  course.runs
+    .filter((run) => run.type === "glade")
+    .forEach((run) => {
+      for (let local = 140; local < run.length - 220; local += 30 + grand() * 22) {
+        const x = run.start + local;
+        const line = course.lineZ(x);
+        [-1, 1].forEach((side) => {
+          const z = line + side * (78 + grand() ** 1.4 * 330);
+          if (!inClearZone(x, z)) {
+            treeSpots.push({ x, z, scale: 0.75 + grand() * 0.7, yaw: grand() * Math.PI, shade: grand() });
+          }
+        });
+      }
+      for (let peak = 120; peak < run.length - 300; peak += 240) {
+        const x = run.start + peak;
+        const line = course.lineZ(x);
+        if (Math.abs(line) > 40) {
+          treeSpots.push({ x, z: -Math.sign(line) * 22, scale: 1.05, yaw: grand() * Math.PI, shade: grand() });
+        }
+      }
+    });
   const trees = new THREE.InstancedMesh(
     treeGeometry,
     keep(new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.8 })),
@@ -402,7 +467,7 @@ export function buildWorld(course) {
   if (queueX) {
     const sx = stopXs[queueX.index];
     const ropeMaterial = keep(new THREE.LineBasicMaterial({ color: "#ff4d4d" }));
-    [-26, 26, 80].forEach((z) => {
+    [-26, 26, 96, 142].forEach((z) => {
       const points = [];
       for (let x = sx - 200; x <= sx + 40; x += 40) {
         const ground = heightAt(x, z);
@@ -413,7 +478,8 @@ export function buildWorld(course) {
       group.add(new THREE.Line(keep(new THREE.BufferGeometry().setFromPoints(points)), ropeMaterial));
     });
     // Other skiers wait in the next lane over, so the walk-in stays clear.
-    queueStops.push({ x: sx + 20, z: 53 }, { x: sx - 30, z: 55 }, { x: sx - 82, z: 51 });
+    // Clear of the returning chairs (z = 60), so nobody stands in their path.
+    queueStops.push({ x: sx + 20, z: 119 }, { x: sx - 30, z: 121 }, { x: sx - 82, z: 117 });
   }
 
   // Base lodge.
@@ -438,27 +504,36 @@ export function buildWorld(course) {
 
   /* ---------- Chairlifts ---------- */
 
+  // Chair in seat space: seat top at y = 7 (the rider's hips), backrest
+  // behind the rider's back, hanger running up behind it to the cable grip.
   const chairParts = [];
-  const hanger = new THREE.CylinderGeometry(1.2, 1.2, LIFT.hanger, 5);
-  hanger.translate(0, LIFT.hanger / 2 + 7, 0);
-  chairParts.push(paint(hanger, "#2b3550"));
-  const seat = new THREE.BoxGeometry(18, 3, 42);
-  seat.translate(1, 5.5, 0);
+  const hangerTop = LIFT.hanger + 7;
+  const hangerPole = new THREE.CylinderGeometry(1.3, 1.3, hangerTop - 30, 5);
+  hangerPole.translate(-27, 30 + (hangerTop - 30) / 2, 0);
+  chairParts.push(paint(hangerPole, "#2b3550"));
+  const grip = new THREE.BoxGeometry(29, 2.6, 2.6);
+  grip.translate(-13.5, hangerTop, 0);
+  chairParts.push(paint(grip, "#2b3550"));
+  const seat = new THREE.BoxGeometry(26, 3, 44);
+  seat.translate(-10, 5.5, 0);
   chairParts.push(paint(seat, "#3a63d8"));
-  const back = new THREE.BoxGeometry(3, 24, 42);
-  back.translate(-8, 18, 0);
+  const back = new THREE.BoxGeometry(3, 28, 44);
+  back.translate(-24, 20, 0);
   chairParts.push(paint(back, "#3a63d8"));
-  const bar = new THREE.BoxGeometry(2, 2, 44);
-  bar.translate(14, 26, 0);
+  const frameBar = new THREE.BoxGeometry(2, 2, 46);
+  frameBar.translate(-27, 30, 0);
+  chairParts.push(paint(frameBar, "#2b3550"));
+  const bar = new THREE.BoxGeometry(2, 2, 46);
+  bar.translate(16, 30, 0);
   chairParts.push(paint(bar, "#2b3550"));
-  const footrest = new THREE.BoxGeometry(3, 2, 34);
-  footrest.translate(16, -20, 0);
-  chairParts.push(paint(footrest, "#2b3550"));
-  [-21, 21].forEach((z) => {
-    const arm = new THREE.BoxGeometry(2, 30, 2);
-    arm.translate(-6, 22, z);
+  [-23, 23].forEach((z) => {
+    const arm = new THREE.BoxGeometry(42, 2, 2);
+    arm.translate(-5, 30, z);
     chairParts.push(paint(arm, "#2b3550"));
   });
+  const footrest = new THREE.BoxGeometry(3, 2, 36);
+  footrest.translate(18, -22, 0);
+  chairParts.push(paint(footrest, "#2b3550"));
   const chairGeometry = keep(mergeGeometries(chairParts));
   chairParts.forEach((g) => g.dispose());
   const chairMaterial = keep(new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.6 }));
@@ -631,14 +706,24 @@ export function buildWorld(course) {
   const worldX = (place, localX) => place.cx + place.facing * localX;
   const worldZ = (place, localZ) => place.faceZ + place.facing * localZ;
 
-  function registerSurface(place, centerY, resize) {
-    surfaces.set(place.index, {
+  function registerSurface(place, centerY, resize, extra = {}) {
+    const surface = {
       kind: place.kind,
       center: new THREE.Vector3(place.cx, centerY, worldZ(place, 0.8)),
       normal: new THREE.Vector3(0, 0, place.facing),
       rotationY: place.facing > 0 ? 0 : Math.PI,
-      resize,
-    });
+      rotationZ: 0,
+      width: SURFACE_WORLD_HEIGHT,
+      height: SURFACE_WORLD_HEIGHT,
+      ...extra,
+    };
+    surface.resize = (w, h) => {
+      surface.width = w;
+      surface.height = h;
+      resize(w, h);
+    };
+    surfaces.set(place.index, surface);
+    return surface;
   }
 
   function buildStation(place) {
@@ -725,7 +810,182 @@ export function buildWorld(course) {
     registerSurface(place, centerY, resize);
   }
 
-  placements.forEach((place) => (place.kind === "station" ? buildStation(place) : buildTrailMap(place)));
+  /* Chapter 3: a small trail sign in the trees that grows to fill the screen. */
+  function buildTreeSign(place) {
+    const spec = SURFACE_SPECS.treeSign;
+    const ground = floorAt(place.cx - 60, place.cx + 60, place.faceZ);
+    const smallScale = 0.3;
+    const smallY = ground + 72;
+    const fullY = ground + 40 + spec.height / 2;
+    const site = makeSite(place, smallY);
+    site.scale.setScalar(smallScale);
+    const sizeFrame = boardFrame(site);
+    const posts = [0, 1].map(() => mesh(new THREE.BoxGeometry(14, 1, 14), darkWood, site));
+    const roof = mesh(gableRoof(1, 60, 40), darkWood, site);
+    const snow = mesh(gableRoof(1, 54, 34), snowCap, site);
+    const resize = (w, h) => {
+      sizeFrame(w, h);
+      posts.forEach((post, i) => {
+        post.scale.y = 260;
+        post.position.set((i ? 1 : -1) * (w / 2 - 30), -h / 2 - 130, -10);
+      });
+      roof.scale.set(w + 90, 1, 1);
+      roof.position.set(0, h / 2 + 22, -8);
+      snow.scale.set(w + 80, 1, 1);
+      snow.position.set(0, h / 2 + 30, -8);
+    };
+    const surface = registerSurface(place, fullY, resize, {
+      expand: { site, smallScale, smallY, fullY, value: 0 },
+    });
+    surface.center.y = fullY;
+  }
+
+  /* Chapter 4: the ski that came off in the crash, standing up in the snow. */
+  function buildSki(place) {
+    const spec = SURFACE_SPECS.ski;
+    const ground = heightAt(place.cx, place.faceZ);
+    const centerY = ground + spec.height / 2 - 10;
+    const site = makeSite(place, centerY);
+    site.rotation.z = 0.1;
+    const topsheet = standard("#ff8a3d");
+    const board = mesh(new THREE.BoxGeometry(1, 1, 3), topsheet, site);
+    board.position.z = -1.6;
+    // Rounded tip: a half disc on top of the plank.
+    const tipShape = new THREE.Shape();
+    tipShape.absarc(0, 0, 1, 0, Math.PI, false);
+    tipShape.closePath();
+    const tipGeometry = new THREE.ExtrudeGeometry(tipShape, { depth: 3, bevelEnabled: false, curveSegments: 14 });
+    tipGeometry.translate(0, 0, -1.5);
+    const tip = mesh(tipGeometry, topsheet, site);
+    const mound = mesh(new THREE.SphereGeometry(30, 10, 6), snowCap, group);
+    mound.scale.set(1.4, 0.35, 1);
+    mound.position.set(place.cx, ground, place.faceZ);
+    const resize = (w, h) => {
+      board.scale.set(w + 4, h + 4, 1);
+      tip.scale.set((w + 4) / 2, (w + 4) / 2, 1);
+      tip.position.set(0, h / 2 + 2, -1.6);
+    };
+    registerSurface(place, centerY, resize, {
+      rotationZ: 0.1,
+      prop: { site, mound, home: site.position.clone(), rotationZ: 0.1 },
+    });
+  }
+
+  /* Chapter 5: a terrain-park jumbotron on steel legs. */
+  function buildJumbotron(place) {
+    const floor = floorAt(place.cx - SURFACE_MAX_WIDTH / 2, place.cx + SURFACE_MAX_WIDTH / 2, place.faceZ);
+    const centerY = floor + 120 + SURFACE_WORLD_HEIGHT / 2;
+    const site = makeSite(place, centerY);
+    const bezel = mesh(new THREE.BoxGeometry(1, 1, 18), ink, site);
+    bezel.position.z = -10;
+    const legs = [0, 1].map(() => mesh(new THREE.BoxGeometry(16, 1, 16), steel, site));
+    const braces = [0, 1].map(() => mesh(new THREE.BoxGeometry(6, 1, 6), steel, site));
+    const label = textLabel("PARK LEADERBOARD", "#ff4d4d", "#ffffff");
+    labels.push(label);
+    keep(label.texture);
+    const face = keep(new THREE.MeshStandardMaterial({ map: label.texture, roughness: 0.5 }));
+    const header = mesh(new THREE.BoxGeometry(320, 46, 8), [ink, ink, ink, ink, face, ink], site);
+    const speakers = [0, 1].map(() => mesh(new THREE.BoxGeometry(30, 70, 24), ink, site));
+    const resize = (w, h) => {
+      bezel.scale.set(w + 30, h + 30, 1);
+      legs.forEach((leg, i) => {
+        const localX = (i ? 1 : -1) * (w / 2 - 40);
+        const ground = heightAt(worldX(place, localX), place.faceZ) - centerY - 20;
+        leg.scale.y = -h / 2 - ground;
+        leg.position.set(localX, ground + leg.scale.y / 2, -14);
+      });
+      braces.forEach((brace, i) => {
+        brace.scale.y = w - 80;
+        brace.rotation.z = Math.PI / 2;
+        brace.position.set(0, -h / 2 - 30 - i * 40, -14);
+      });
+      header.position.set(0, h / 2 + 40, 0);
+      speakers.forEach((speaker, i) => speaker.position.set((i ? 1 : -1) * (w / 2 + 34), h / 2 - 40, -6));
+    };
+    registerSurface(place, centerY, resize);
+  }
+
+  /* Chapter 6: the mid-mountain lodge, open door, menu on the back wall. */
+  function buildLodge(place) {
+    const { width, depth, frontZ, doorWidth } = LODGE;
+    const height = 290;
+    const doorHeight = 180;
+    const wall = 12;
+    const backZ = frontZ - depth;
+    const floor = floorAt(place.cx - width / 2, place.cx + width / 2, frontZ - depth / 2) + 4;
+    const lodge = new THREE.Group();
+    lodge.position.set(place.cx, floor, 0);
+    group.add(lodge);
+    const box = (w, h, d, material, x, y, z) => {
+      const m = mesh(new THREE.BoxGeometry(w, h, d), material, lodge);
+      m.position.set(x, y, z);
+      return m;
+    };
+    box(width + 30, 200, depth + 30, stone, 0, -98, frontZ - depth / 2);
+    box(width, 4, depth, standard("#7a5232"), 0, 2, frontZ - depth / 2);
+    box(width, height, wall, timber, 0, height / 2, backZ + wall / 2);
+    [-1, 1].forEach((side) => box(wall, height, depth, timber, side * (width / 2 - wall / 2), height / 2, frontZ - depth / 2));
+    const sideWidth = (width - doorWidth) / 2;
+    [-1, 1].forEach((side) => {
+      box(sideWidth, height, wall, timber, side * (doorWidth / 2 + sideWidth / 2), height / 2, frontZ - wall / 2);
+      // Warm windows either side of the door.
+      box(110, 70, 2, bulb, side * (doorWidth / 2 + sideWidth / 2), 150, frontZ + 1);
+    });
+    box(doorWidth, height - doorHeight, wall, timber, 0, doorHeight + (height - doorHeight) / 2, frontZ - wall / 2);
+    const roof = mesh(gableRoof(width + 70, depth + 90, 150), darkWood, lodge);
+    roof.position.set(0, height, frontZ - depth / 2);
+    const snowRoof = mesh(gableRoof(width + 60, depth + 78, 140), snowCap, lodge);
+    snowRoof.position.set(0, height + 10, frontZ - depth / 2);
+    box(30, 120, 30, stone, width / 2 - 80, height + 90, frontZ - depth / 2 - 60);
+
+    // Inside: tables and benches, a counter, warm light.
+    const tableWood = standard("#8b6340");
+    [-1, 1].forEach((side) => {
+      [0, 1].forEach((row) => {
+        const x = side * 170;
+        const z = frontZ - 120 - row * 150;
+        box(120, 6, 50, tableWood, x, 44, z);
+        box(10, 42, 10, darkWood, x, 21, z);
+        [-1, 1].forEach((b) => box(120, 5, 16, darkWood, x, 24, z + b * 40));
+      });
+    });
+    box(200, 60, 40, darkWood, 0, 30, backZ + 70);
+    const light = new THREE.PointLight("#ffcf8f", 1.4, 700, 0);
+    light.position.set(place.cx, floor + height - 50, frontZ - depth / 2);
+    group.add(light);
+
+    const sign = textLabel("LODGE", "#0b1030", "#ffd23f");
+    labels.push(sign);
+    keep(sign.texture);
+    const signFace = keep(new THREE.MeshStandardMaterial({ map: sign.texture, roughness: 0.6 }));
+    const signBoard = mesh(new THREE.BoxGeometry(220, 44, 8), [darkWood, darkWood, darkWood, darkWood, signFace, darkWood], lodge);
+    signBoard.position.set(0, doorHeight + 50, frontZ + 8);
+
+    // Ski rack by the door (where Alex leaves his skis).
+    box(110, 5, 6, darkWood, doorWidth / 2 + 90, 44, frontZ + 30);
+    ["#ff8a3d", "#d96a24", "#3a63d8"].forEach((color, i) => {
+      const ski = box(5, 66, 3, standard(color), doorWidth / 2 + 60 + i * 22, 33, frontZ + 34);
+      ski.rotation.z = 0.08;
+    });
+
+    // Menu chalkboard on the back wall, facing the door.
+    const centerY = floor + 150;
+    const site = makeSite(place, centerY);
+    const resize = boardFrame(site);
+    registerSurface(place, centerY, resize, { interior: true });
+  }
+
+  placements.forEach((place) => {
+    const builders = {
+      station: buildStation,
+      trailMap: buildTrailMap,
+      treeSign: buildTreeSign,
+      ski: buildSki,
+      jumbotron: buildJumbotron,
+      menu: buildLodge,
+    };
+    builders[place.kind](place);
+  });
 
   /* ---------- Drifting clouds (background motion behind the boards) ---------- */
 
@@ -800,10 +1060,5 @@ export function buildWorld(course) {
     trees.dispose();
   }
 
-  /* Resize every board to w x h world units (called on viewport resize). */
-  function setSurfaceSize(w, h) {
-    surfaces.forEach((surface) => surface.resize(w, h));
-  }
-
-  return { group, heightAt, update, refreshLabels, dispose, surfaces, setSurfaceSize, queueStops };
+  return { group, heightAt, update, refreshLabels, dispose, surfaces, queueStops };
 }

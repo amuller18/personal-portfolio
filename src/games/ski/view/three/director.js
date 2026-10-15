@@ -47,7 +47,6 @@ export default class Director {
     this.course = course;
     this.heightAt = heightAt;
     this.surfaces = surfaces;
-    this.surfaceSize = { width: 400, height: 300 };
     this.offset = new THREE.Vector3(260, 110, 160);
     this.offsetVelocity = new THREE.Vector3();
     this.look = new THREE.Vector3(0, 38, 0);
@@ -71,9 +70,9 @@ export default class Director {
     this.zoom.velocity += degrees * 9;
   }
 
-  boardDistance(aspect) {
+  boardDistance(aspect, surface) {
     const t = Math.tan((BOARD_FOV * Math.PI) / 360);
-    const { width, height } = this.surfaceSize;
+    const { width, height } = surface;
     return Math.max(height / 2 / t, width / 2 / (t * aspect)) / BOARD_FILL;
   }
 
@@ -96,7 +95,7 @@ export default class Director {
     const surface = idle ? this.surfaces.get(nearest) : null;
     if (surface) {
       // Square-on to the board, close enough to fill the screen.
-      this.tmp.copy(surface.center).addScaledVector(surface.normal, this.boardDistance(aspect));
+      this.tmp.copy(surface.center).addScaledVector(surface.normal, this.boardDistance(aspect, surface));
       target.offset.copy(this.tmp).sub(this.rider);
       target.look.copy(surface.center).sub(this.rider);
       target.fov = BOARD_FOV;
@@ -148,6 +147,71 @@ export default class Director {
         return "shuffle";
       // Lift shots stay on the open (-z) side, the same side as the wall
       // shot, so the camera never sweeps through the cables.
+      case "glade":
+        // Chase through the trees, low and close.
+        target.offset.set(-170, 80, 40);
+        target.look.set(170, 10, 0);
+        target.fov = 58;
+        target.stiffness = 8;
+        return "glade";
+      case "cliff-approach":
+        // From the side, so the edge and the drop below are in frame.
+        target.offset.set(90, 70, -320);
+        target.look.set(230, -70, 0);
+        target.fov = 54;
+        target.stiffness = 5;
+        return "cliff-approach";
+      case "cliff-air": {
+        // Low, looking up from the landing as Alex comes over the edge.
+        const run = this.course.runs[skier.run];
+        const x = run.cliff.impactX + 160;
+        const z = -180;
+        this.tmp.set(x, this.heightAt(x, z) + 24, z);
+        target.offset.copy(this.tmp).sub(this.rider);
+        target.look.set(0, 10, 0);
+        target.fov = 64;
+        target.stiffness = 6;
+        return "cliff-air";
+      }
+      case "tumble":
+        target.offset.set(40, 55, -250);
+        target.look.set(30, 10, 0);
+        target.fov = 52;
+        target.stiffness = 9;
+        return "tumble";
+      case "rest":
+      case "recover":
+        target.offset.set(90, 50, -190);
+        target.look.set(10, 15, 0);
+        target.fov = 48;
+        target.stiffness = 5;
+        return skier.phase;
+      case "lodge-skate":
+      case "stepout":
+        target.offset.set(70, 80, 260);
+        target.look.set(0, 50, -170);
+        target.fov = 50;
+        target.stiffness = 5;
+        return skier.phase;
+      case "walkin":
+        // Follow Alex through the door.
+        target.offset.set(16, 82, 210);
+        target.look.set(0, 60, -200);
+        target.fov = 54;
+        target.stiffness = 6;
+        return "walkin";
+      case "walkout":
+        target.offset.set(10, 82, 230);
+        target.look.set(0, 50, -120);
+        target.fov = 52;
+        target.stiffness = 6;
+        return "walkout";
+      case "clipin":
+        target.offset.set(120, 60, 200);
+        target.look.set(0, 30, 0);
+        target.fov = 50;
+        target.stiffness = 5;
+        return "clipin";
       case "load":
         target.offset.set(-60, 70, -250);
         target.look.set(30, 34, 0);
@@ -190,7 +254,8 @@ export default class Director {
       const s = skier.air;
       const arc = Math.sin(Math.PI * s);
       const finale = skier.jump.index === this.course.jumps.length - 1;
-      const kind = finale ? "finale" : AIR_SHOTS[skier.jump.index % AIR_SHOTS.length];
+      const spinTrick = skier.jump.trick.name === "Three-Sixty";
+      const kind = finale ? "finale" : spinTrick ? "spin360" : AIR_SHOTS[skier.jump.index % AIR_SHOTS.length];
       target.look.set(0, 26, 0);
       target.stiffness = 30;
       switch (kind) {
@@ -222,6 +287,14 @@ export default class Director {
           target.fov = 52;
           target.stiffness = 18;
           break;
+        case "spin360": {
+          // The camera goes all the way around while Alex spins.
+          const a = -Math.PI / 2 - s * Math.PI * 2;
+          target.offset.set(Math.cos(a) * 230, 45 + 55 * arc, Math.sin(a) * 230);
+          target.fov = 56;
+          target.stiffness = 60;
+          break;
+        }
         default: {
           const a = Math.PI - s * Math.PI * 2;
           target.offset.set(Math.cos(a) * 240, 50 + 70 * arc, Math.sin(a) * 240);
@@ -256,6 +329,7 @@ export default class Director {
     }
     if (phase !== this.phase) {
       if (phase === "air") this.kick(-7);
+      if (phase === "tumble") this.kick(14);
       if (this.phase === "air") this.kick(9);
     }
   }

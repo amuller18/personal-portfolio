@@ -87,6 +87,13 @@ function Hud({ snapshot, stops, jumps, onSelect }) {
 }
 
 function TrickCallout({ snapshot, jumps }) {
+  if (snapshot.crash) {
+    return (
+      <div className="ski-callout ski-callout--crash" key="crash" aria-hidden="true">
+        <span className="ski-callout__name">Yard sale!</span>
+      </div>
+    );
+  }
   if (snapshot.trick >= 0) {
     const { trick } = jumps[snapshot.trick];
     return (

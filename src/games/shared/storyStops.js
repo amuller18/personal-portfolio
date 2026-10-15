@@ -24,6 +24,8 @@ export function chapterStop(section) {
     lesson: section.lesson ?? null,
     href: `/#${section.id}`,
     ski: section.ski ?? {},
+    // The full section, for set pieces that show more than the summary.
+    source: section,
   };
 }
 

@@ -130,7 +130,8 @@ export default class SkiModel {
     const run = Math.min(Math.floor(this.progress), this.lastStop - 1);
     const f = this.progress - run;
     const { jump } = this.course.runs[run];
-    const trick = this.skier.airborne ? this.skier.jump.index : -1;
+    const trick = this.skier.airborne && this.skier.jump ? this.skier.jump.index : -1;
+    const crash = this.skier.phase === "tumble" && this.velocity > 0;
     const landed =
       jump && !this.skier.airborne && this.velocity > 0 && f >= jump.touchdown && f < jump.touchdown + LANDED_WINDOW
         ? jump.index
@@ -139,7 +140,8 @@ export default class SkiModel {
     const score = this.score();
 
     return {
-      phaseKey: `${activeStop}|${trick}|${landed}|${rewinding}|${score}`,
+      phaseKey: `${activeStop}|${trick}|${landed}|${rewinding}|${score}|${crash}`,
+      crash,
       activeStop,
       nearestStop: nearest,
       trick,

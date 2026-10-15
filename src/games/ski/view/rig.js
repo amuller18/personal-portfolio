@@ -49,11 +49,27 @@ export function solveRig(pose, { time = 0, speed = 0, airborne = false, squash =
   const backAngle = pose.split * 0.45 - pose.cross * 0.6 + sit * 0.3;
 
   const standShoulder = { x: hip.x + 7 + bend * 7, y: hip.y - 21 + bend * 5 };
-  const shoulder = mix(standShoulder, { x: hip.x + 1, y: hip.y - 22 }, sit);
-  const head = { x: shoulder.x + 3, y: shoulder.y - 9 };
+  let shoulder = mix(standShoulder, { x: hip.x + 1, y: hip.y - 22 }, sit);
 
-  const ankleFront = { x: front.x, y: front.y - 7 };
-  const ankleBack = { x: back.x, y: back.y - 7 };
+  // Sprawled in the snow after the crash: sitting, leaning back, legs out.
+  const sprawl = clamp01(pose.sprawl || 0);
+  let sprawlHip = hip;
+  let frontFoot = front;
+  let backFoot = back;
+  let frontTilt = frontAngle;
+  let backTilt = backAngle;
+  if (sprawl > 0) {
+    sprawlHip = mix(hip, { x: -6, y: -9 }, sprawl);
+    frontFoot = mix(front, { x: 24, y: -2 }, sprawl);
+    backFoot = mix(back, { x: 17, y: -3 }, sprawl);
+    frontTilt = lerp(frontAngle, 0.1, sprawl);
+    backTilt = lerp(backAngle, -0.18, sprawl);
+    shoulder = mix(shoulder, { x: sprawlHip.x - 9, y: sprawlHip.y - 19 }, sprawl);
+  }
+  const head = { x: shoulder.x + 3 - sprawl * 2, y: shoulder.y - 9 + sprawl };
+
+  const ankleFront = { x: frontFoot.x, y: frontFoot.y - 7 };
+  const ankleBack = { x: backFoot.x, y: backFoot.y - 7 };
 
   const rest = { x: shoulder.x + 12 - bend * 2, y: shoulder.y + 11 };
   const raised = { x: shoulder.x + 8, y: shoulder.y - 14 };
@@ -61,8 +77,9 @@ export function solveRig(pose, { time = 0, speed = 0, airborne = false, squash =
   const onBar = { x: shoulder.x + 11, y: shoulder.y + 6 };
   const onShoulder = { x: shoulder.x + 9, y: shoulder.y + 1 };
   const armSwing = { x: rest.x - 6 - Math.sin(stride) * 6 * walk, y: rest.y + 4 };
-  const hand = mix(mix(mix(mix(rest, raised, pose.arms), grabbed, pose.grab), onBar, sit), onShoulder, carry);
-  const backHand = mix(mix(mix(rest, raised, pose.arms), onBar, sit), armSwing, carry);
+  const propped = { x: sprawlHip.x - 16, y: -3 };
+  const hand = mix(mix(mix(mix(mix(rest, raised, pose.arms), grabbed, pose.grab), onBar, sit), onShoulder, carry), propped, sprawl);
+  const backHand = mix(mix(mix(mix(rest, raised, pose.arms), onBar, sit), armSwing, carry), { x: propped.x + 3, y: -2 }, sprawl);
 
   const tipFor = (h) =>
     mix(
@@ -74,18 +91,21 @@ export function solveRig(pose, { time = 0, speed = 0, airborne = false, squash =
       { x: h.x + 2, y: h.y + 36 },
       carry,
     );
+  const tipFinal = (h) => mix(tipFor(h), { x: h.x - 32, y: h.y + 1 }, sprawl);
 
   // Skis: on the boots, or both together over the shoulder (tips up front).
   const carried = { x: shoulder.x + 6, y: shoulder.y - 1, angle: -1.15 };
   const skiFront = {
-    x: lerp(front.x, carried.x, carry),
-    y: lerp(front.y, carried.y, carry),
-    angle: lerp(frontAngle, carried.angle, carry),
+    x: lerp(frontFoot.x, carried.x, carry),
+    y: lerp(frontFoot.y, carried.y, carry),
+    angle: lerp(frontTilt, carried.angle, carry),
+    visible: (pose.lostSki || 0) < 0.5 && (pose.noSkis || 0) < 0.5,
   };
   const skiBack = {
-    x: lerp(back.x, carried.x - 1.5, carry),
-    y: lerp(back.y, carried.y + 2, carry),
-    angle: lerp(backAngle, carried.angle + 0.04, carry),
+    x: lerp(backFoot.x, carried.x - 1.5, carry),
+    y: lerp(backFoot.y, carried.y + 2, carry),
+    angle: lerp(backTilt, carried.angle + 0.04, carry),
+    visible: (pose.noSkis || 0) < 0.5,
   };
 
   const flutter = 1 + speed * 2.5;
@@ -102,22 +122,23 @@ export function solveRig(pose, { time = 0, speed = 0, airborne = false, squash =
     bend,
     skiFront,
     skiBack,
-    hip,
+    sprawl,
+    hip: sprawlHip,
     shoulder,
     head,
     neck,
-    front,
-    back,
-    frontAngle,
-    backAngle,
+    front: frontFoot,
+    back: backFoot,
+    frontAngle: frontTilt,
+    backAngle: backTilt,
     ankleFront,
     ankleBack,
-    kneeFront: kneeFor(hip, ankleFront),
-    kneeBack: kneeFor(hip, ankleBack),
+    kneeFront: kneeFor(sprawlHip, ankleFront),
+    kneeBack: kneeFor(sprawlHip, ankleBack),
     hand,
     backHand,
-    tipFront: tipFor(hand),
-    tipBack: tipFor(backHand),
+    tipFront: tipFinal(hand),
+    tipBack: tipFinal(backHand),
     scarf,
   };
 }

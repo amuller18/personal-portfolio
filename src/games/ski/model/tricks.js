@@ -11,6 +11,9 @@
  *   sit       0..1 seated (chairlift); set by the course, not by tricks
  *   carry     0..1 skis off, carried on the shoulder (course)
  *   walk      0..1 walking stride amount; stride is the stride phase (course)
+ *   sprawl    0..1 sitting in the snow after a crash (course)
+ *   lostSki   0..1 front ski gone (stuck in the snow somewhere) (course)
+ *   noSkis    0..1 skis off and left in a rack (course)
  * Rotations must finish on whole turns so every landing is clean.
  */
 import { clamp01, smoothRange } from "../../shared/math";
@@ -27,6 +30,9 @@ export const REST_POSE = Object.freeze({
   carry: 0,
   walk: 0,
   stride: 0,
+  sprawl: 0,
+  lostSki: 0,
+  noSkis: 0,
 });
 
 /* 0 -> 1 -> 0: in over the first `edge` of the air, out over the last. */
@@ -43,8 +49,8 @@ const trick = (name, points, shape) => ({
 });
 
 export const TRICKS = [
-  trick("Backflip", 500, (s) => ({ rotation: -360 * turn(s), tuck: 0.8 * hold(s) })),
   trick("Three-Sixty", 400, (s) => ({ spin: turn(s), tuck: 0.35 * hold(s), arms: 0.3 * hold(s) })),
+  trick("Backflip", 500, (s) => ({ rotation: -360 * turn(s), tuck: 0.8 * hold(s) })),
   trick("Mute Grab", 350, (s) => ({
     grab: hold(s, 0.25),
     tuck: 0.75 * hold(s, 0.25),

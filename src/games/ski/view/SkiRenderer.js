@@ -544,11 +544,13 @@ export default class SkiRenderer {
     const drawChair = (x, y) => {
       const sx = this.sx(x);
       const sy = this.sy(y);
+      // Backrest and hanger sit behind the rider so they never cut through them.
       ctx.fillStyle = "#2b3550";
-      ctx.fillRect(Math.round(sx), Math.round(sy - (LIFT.hanger + 7) * z), Math.max(1, Math.round(z)), Math.round((LIFT.hanger + 7) * z));
+      ctx.fillRect(Math.round(sx - 27 * z), Math.round(sy - (LIFT.hanger + 7) * z), Math.max(1, Math.round(z)), Math.round((LIFT.hanger - 23) * z));
+      ctx.fillRect(Math.round(sx - 27 * z), Math.round(sy - (LIFT.hanger + 7) * z), Math.round(28 * z), Math.max(1, Math.round(z)));
       ctx.fillStyle = "#3a63d8";
-      ctx.fillRect(Math.round(sx - 9 * z), Math.round(sy - 7 * z), Math.round(20 * z), Math.max(1, Math.round(3 * z)));
-      ctx.fillRect(Math.round(sx - 10 * z), Math.round(sy - 28 * z), Math.max(1, Math.round(3 * z)), Math.round(22 * z));
+      ctx.fillRect(Math.round(sx - 23 * z), Math.round(sy - 7 * z), Math.round(26 * z), Math.max(1, Math.round(3 * z)));
+      ctx.fillRect(Math.round(sx - 26 * z), Math.round(sy - 34 * z), Math.max(1, Math.round(3 * z)), Math.round(28 * z));
     };
     course.lifts.forEach((lift) => {
       if (lift.unloadX < left || lift.loadX > right) return;

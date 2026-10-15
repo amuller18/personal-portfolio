@@ -82,6 +82,7 @@ export function createRider(palette = RIDER) {
   goggles.position.set(4.6, 0.5, 0);
   const lens = add(new THREE.BoxGeometry(1.2, 3, 11), palette.lens, parts.head);
   lens.position.set(6.8, 0.5, 0);
+  const goggleSet = [goggles, lens];
 
   const a = new THREE.Vector3();
   const b = new THREE.Vector3();
@@ -107,6 +108,14 @@ export function createRider(palette = RIDER) {
     parts.skiFront.rotation.set(0, pose.cross * 0.55, -(rig.skiFront.angle - pose.cross * 0.6));
     parts.skiBack.position.copy(v(rig.skiBack, -5.5 + carry * 17));
     parts.skiBack.rotation.set(0, -pose.cross * 0.55, -(rig.skiBack.angle + pose.cross * 0.6));
+    parts.skiFront.visible = rig.skiFront.visible;
+    parts.skiBack.visible = rig.skiBack.visible;
+    // After the crash the goggles end up pushed onto the helmet.
+    goggleSet.forEach((piece, i) => {
+      piece.position.y = 0.5 + rig.sprawl * 6;
+      piece.position.x = (i === 0 ? 4.6 : 6.8) - rig.sprawl * 2;
+      piece.rotation.z = rig.sprawl * 0.5;
+    });
     parts.bootFront.position.copy(v(rig.front, 5));
     parts.bootFront.rotation.set(0, 0, -rig.frontAngle * (1 - carry));
     parts.bootBack.position.copy(v(rig.back, -5));

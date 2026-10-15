@@ -205,15 +205,192 @@ function TrailMap({ stop, nextTrick, onNext, onPrev }) {
       <Actions
         onPrev={onPrev}
         onNext={onNext}
-        label="Drop in"
-        sub={nextTrick ? `Next jump · ${nextTrick.name}` : null}
+        label="Into the trees"
+        sub={nextTrick ? `Next jump · ${nextTrick.name}` : "Next: the glades"}
         href={stop.href}
       />
     </article>
   );
 }
 
-const BOARDS = { station: StationWall, trailMap: TrailMap };
+const ACTIVITY_ICONS = { ski: "⛷", climb: "🧗", hike: "🥾", friends: "👥", travel: "✈", new: "✦" };
+const publicPath = (src) => (src ? src.replace(/^\.\//, "/") : src);
+
+/* Chapter 3: the trail sign at the bottom of the glade. */
+function TreeSign({ stop, onNext, onPrev }) {
+  const { photo, activities = [] } = stop.source || {};
+  return (
+    <article className="ts" aria-label={`Chapter ${stop.number}: ${stop.title}`}>
+      <header className="ts__head">
+        <span className="ts__arrow" aria-hidden="true">
+          ◆
+        </span>
+        <span className="ts__trail">Off-piste · {stop.era}</span>
+      </header>
+      <div className="ts__body">
+        {photo && (
+          <figure className="ts__photo">
+            <img src={publicPath(photo.src)} alt={photo.alt} />
+            <figcaption>{photo.caption}</figcaption>
+          </figure>
+        )}
+        <section className="ts__text">
+          <p className="ts__kicker">Checkpoint {stop.number}</p>
+          <h2 className="ts__title">{stop.title}</h2>
+          <p className="ts__headline">{stop.headline}</p>
+          <ul className="ts__activities">
+            {activities.map((activity) => (
+              <li key={activity.key}>
+                <span aria-hidden="true">{ACTIVITY_ICONS[activity.key] || "•"}</span>
+                <strong>{activity.title}</strong>
+                <em>{activity.body}</em>
+              </li>
+            ))}
+          </ul>
+          {stop.lesson && <p className="ts__lesson">{stop.lesson}</p>}
+        </section>
+      </div>
+      <Actions onPrev={onPrev} onNext={onNext} label="Keep skiing" sub="Next: the cliffs" href={stop.href} />
+    </article>
+  );
+}
+
+/* Chapter 4: printed on the topsheet of the ski that came off in the crash. */
+function SkiTopsheet({ stop, active, nextTrick, onNext, onPrev }) {
+  const link = stop.source && stop.source.link;
+  return (
+    <article className="st" aria-label={`Chapter ${stop.number}: ${stop.title}`}>
+      <span className="st__brand" aria-hidden="true">
+        TUTORMATCH
+      </span>
+      <div className="st__content">
+        <p className="st__kicker">
+          Checkpoint {stop.number} · {stop.era}
+        </p>
+        <h2 className="st__title">{stop.title}</h2>
+        <p className="st__headline">{stop.headline}</p>
+        <dl className="st__stats">
+          {stop.stats.map((stat, i) => (
+            <div key={stat.label}>
+              <dt>{stat.label}</dt>
+              <dd>
+                <CountUp key={active ? "on" : "off"} value={stat.value} delay={300 + i * 150} />
+              </dd>
+            </div>
+          ))}
+        </dl>
+        {stop.lesson && <p className="st__lesson">{stop.lesson}</p>}
+        {link && (
+          <a className="st__link" href={link.href} target="_blank" rel="noreferrer">
+            {link.label} ↗
+          </a>
+        )}
+      </div>
+      <footer className="st__actions">
+        <button type="button" className="ski-btn ski-btn--ghost" onClick={onPrev} aria-label="Back to the previous checkpoint">
+          ◀
+        </button>
+        <button type="button" className="ski-btn ski-btn--primary" onClick={onNext}>
+          <span className="ski-btn__main">Get up ▶</span>
+          {nextTrick && <span className="ski-btn__sub">Next jump · {nextTrick.name}</span>}
+        </button>
+      </footer>
+    </article>
+  );
+}
+
+/* Chapter 5: the terrain-park jumbotron. */
+function Jumbotron({ stop, active, nextTrick, onNext, onPrev }) {
+  const source = stop.source || {};
+  const pipeline = source.pipeline || [];
+  return (
+    <article className={`jt ${active ? "is-on" : ""}`} aria-label={`Chapter ${stop.number}: ${stop.title}`}>
+      <header className="jt__head">
+        <span className="jt__live">
+          <i aria-hidden="true" /> Live
+        </span>
+        <span>Checkpoint {stop.number} · {stop.era}</span>
+      </header>
+      <div className="jt__body">
+        <section className="jt__lead">
+          <h2 className="jt__title">{stop.title}</h2>
+          <p className="jt__headline">{stop.headline}</p>
+          <p className="jt__summary">{stop.summary}</p>
+        </section>
+        <ol className="jt__board" aria-label="The pipeline">
+          {pipeline.map((step, i) => (
+            <li key={step.key} style={{ "--i": i }}>
+              <span className="jt__rank">{String(i + 1).padStart(2, "0")}</span>
+              <span className="jt__step">{step.short}</span>
+              <span className="jt__bar" aria-hidden="true">
+                <b />
+              </span>
+            </li>
+          ))}
+        </ol>
+      </div>
+      {stop.lesson && (
+        <p className="jt__ticker" aria-label={stop.lesson}>
+          <span aria-hidden="true">
+            ★ {stop.lesson} ★ {stop.lesson} ★
+          </span>
+        </p>
+      )}
+      <Actions
+        onPrev={onPrev}
+        onNext={onNext}
+        label="Keep riding"
+        sub={nextTrick ? `Next jump · ${nextTrick.name}` : "Next: the lodge"}
+        href={stop.href}
+      />
+    </article>
+  );
+}
+
+/* Chapter 6: the chalkboard menu inside the mid-mountain lodge. */
+function Menu({ stop, onNext, onPrev }) {
+  const work = (stop.source && stop.source.work) || [];
+  return (
+    <article className="mn" aria-label={`Chapter ${stop.number}: ${stop.title}`}>
+      <header className="mn__head">
+        <p className="mn__kicker">Today&apos;s menu · {stop.era}</p>
+        <h2 className="mn__title">{stop.title}</h2>
+        <p className="mn__headline">{stop.headline}</p>
+      </header>
+      <ul className="mn__items">
+        {work.map((item) => (
+          <li key={item.title}>
+            <div className="mn__dish">
+              <strong>{item.title}</strong>
+              <span className="mn__dots" aria-hidden="true" />
+              <em>{item.tag}</em>
+            </div>
+            <p>{item.body}</p>
+          </li>
+        ))}
+      </ul>
+      <aside className="mn__specials">
+        <span>Specials</span>
+        {stop.stats.map((stat) => (
+          <b key={stat.label}>
+            {stat.value} <small>{stat.label}</small>
+          </b>
+        ))}
+        {stop.lesson && <q>{stop.lesson}</q>}
+      </aside>
+      <Actions onPrev={onPrev} onNext={onNext} label="Back on the slopes" sub="Walk out, click in" href={stop.href} />
+    </article>
+  );
+}
+
+const BOARDS = {
+  station: StationWall,
+  trailMap: TrailMap,
+  treeSign: TreeSign,
+  ski: SkiTopsheet,
+  jumbotron: Jumbotron,
+  menu: Menu,
+};
 
 export default function SurfaceContent({ kind, ...props }) {
   const Board = BOARDS[kind];

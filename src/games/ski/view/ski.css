@@ -1908,3 +1908,605 @@ html.ski-mode body {
     animation: none !important;
   }
 }
+
+/* ---------- Crash callout ---------- */
+.ski-callout--crash .ski-callout__name {
+  color: #fff;
+  text-shadow:
+    3px 0 0 var(--ski-ink),
+    -3px 0 0 var(--ski-ink),
+    0 3px 0 var(--ski-ink),
+    0 -3px 0 var(--ski-ink),
+    6px 6px 0 #ff4d4d;
+  animation: ski-pop 0.35s cubic-bezier(0.2, 1.6, 0.4, 1) both, ski-shake 0.12s linear infinite;
+}
+
+@keyframes ski-shake {
+  25% {
+    transform: translate(-3px, 2px) rotate(-2deg);
+  }
+  75% {
+    transform: translate(3px, -2px) rotate(2deg);
+  }
+}
+
+/* ----- Chapter 3: carved trail sign in the glade ----- */
+.ts {
+  height: 100%;
+  color: #fff3d6;
+  background:
+    repeating-linear-gradient(0deg, rgba(40, 22, 10, 0.35) 0 3px, transparent 3px 120px),
+    linear-gradient(90deg, #6b4428, #7d5131 30%, #6b4428 60%, #7a4e2f);
+  box-shadow: inset 0 0 0 14px #4a2f1c, inset 0 0 0 20px rgba(255, 210, 63, 0.55);
+}
+
+.ts__head {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 54px 70px 0;
+  font-family: var(--ski-pixel);
+  font-size: 22px;
+  color: var(--ski-yellow);
+  text-transform: uppercase;
+}
+
+.ts__arrow {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  font-size: 30px;
+  color: #fff;
+  background: #0b1030;
+  transform: rotate(45deg);
+}
+
+.ts__body {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 60px;
+  padding: 40px 70px 0;
+}
+
+.ts__photo {
+  margin: 0;
+  padding: 18px 18px 60px;
+  background: #fffaf0;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.45);
+  transform: rotate(-3deg);
+  animation: ts-sway 5s ease-in-out infinite alternate;
+}
+
+.ts__photo img {
+  display: block;
+  width: 420px;
+  height: 460px;
+  object-fit: cover;
+}
+
+.ts__photo figcaption {
+  margin-top: 14px;
+  font-size: 28px;
+  font-weight: 700;
+  color: #2b2b2b;
+  text-align: center;
+}
+
+@keyframes ts-sway {
+  to {
+    transform: rotate(-1deg) translateY(-6px);
+  }
+}
+
+.ts__kicker {
+  margin-bottom: 12px;
+  font-family: var(--ski-pixel);
+  font-size: 18px;
+  color: var(--ski-yellow);
+  text-transform: uppercase;
+}
+
+.ts__title {
+  margin-bottom: 18px;
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-size: 86px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: #fff;
+  text-shadow: 0 4px 0 #3b2414;
+}
+
+.ts__headline {
+  margin-bottom: 26px;
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.ts__activities {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px 30px;
+  margin: 0 0 24px;
+  padding: 0;
+  list-style: none;
+}
+
+.ts__activities li {
+  display: grid;
+  grid-template-columns: 50px 1fr;
+  align-items: center;
+  column-gap: 12px;
+}
+
+.ts__activities li > span {
+  grid-row: span 2;
+  font-size: 38px;
+}
+
+.ts__activities strong {
+  font-size: 26px;
+  color: #fff;
+}
+
+.ts__activities em {
+  font-size: 19px;
+  font-style: normal;
+  color: #e9d6b3;
+}
+
+.ts__lesson {
+  padding: 16px 22px;
+  font-size: 24px;
+  line-height: 1.4;
+  color: #0b1030;
+  background: var(--ski-yellow);
+  border-radius: 14px;
+}
+
+.ts .board-more {
+  color: #ffe9b8;
+}
+
+/* ----- Chapter 4: the ski topsheet ----- */
+.st {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+  color: #fff;
+  background:
+    linear-gradient(160deg, transparent 0 58%, rgba(11, 16, 48, 0.9) 58% 64%, transparent 64%),
+    linear-gradient(200deg, #ff8a3d 0%, #ff4d4d 45%, #c7333b 100%);
+  border-radius: 210px 210px 20px 20px;
+}
+
+.st__brand {
+  position: absolute;
+  top: 250px;
+  right: -168px;
+  font-family: var(--ski-pixel);
+  font-size: 46px;
+  letter-spacing: 0.12em;
+  color: rgba(255, 255, 255, 0.22);
+  transform: rotate(90deg);
+}
+
+.st__content {
+  position: relative;
+  padding: 150px 36px 0;
+}
+
+.st__kicker {
+  margin-bottom: 14px;
+  font-family: var(--ski-pixel);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ski-yellow);
+  text-transform: uppercase;
+}
+
+.st__title {
+  margin-bottom: 16px;
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-size: 52px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+}
+
+.st__headline {
+  margin-bottom: 22px;
+  font-size: 25px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.st__stats {
+  margin: 0 0 20px;
+}
+
+.st__stats div {
+  padding: 10px 0;
+  border-top: 3px solid rgba(255, 255, 255, 0.3);
+}
+
+.st__stats dt {
+  font-size: 18px;
+  opacity: 0.85;
+}
+
+.st__stats dd {
+  margin: 0;
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-size: 46px;
+  font-weight: 700;
+  color: var(--ski-yellow);
+}
+
+.st__lesson {
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  font-size: 21px;
+  line-height: 1.35;
+  color: #0b1030;
+  background: #fff;
+  border-radius: 12px;
+}
+
+.st__link {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.st__actions {
+  position: absolute;
+  left: 36px;
+  right: 36px;
+  bottom: 40px;
+  display: flex;
+  gap: 14px;
+}
+
+.st .ski-btn {
+  min-height: 90px;
+  font-size: 20px;
+  border-radius: 18px;
+}
+
+.st .ski-btn--ghost {
+  width: 90px;
+  flex: none;
+}
+
+.st .ski-btn--primary {
+  flex: 1;
+}
+
+.st .ski-btn__sub {
+  font-size: 12px;
+}
+
+/* ----- Chapter 5: LED jumbotron ----- */
+.jt {
+  height: 100%;
+  color: #e9f4ff;
+  background:
+    repeating-linear-gradient(0deg, rgba(0, 0, 0, 0.35) 0 2px, transparent 2px 5px),
+    radial-gradient(circle at 20% 0%, rgba(94, 240, 255, 0.18), transparent 50%),
+    #05070f;
+}
+
+.jt__head {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+  height: 110px;
+  padding: 0 60px;
+  font-family: var(--ski-pixel);
+  font-size: 20px;
+  color: var(--ski-cyan);
+  text-transform: uppercase;
+  border-bottom: 4px solid rgba(94, 240, 255, 0.3);
+}
+
+.jt__live {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  color: #fff;
+  background: #ff4d4d;
+}
+
+.jt__live i {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  animation: ski-blink 0.9s steps(2) infinite;
+}
+
+.jt__body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  padding: 44px 60px 0;
+}
+
+.jt__title {
+  margin-bottom: 18px;
+  font-family: var(--ski-pixel);
+  font-size: 60px;
+  font-weight: 400;
+  line-height: 1.15;
+  color: var(--ski-yellow);
+  text-shadow: 0 0 18px rgba(255, 210, 63, 0.6);
+}
+
+.jt__headline {
+  margin-bottom: 18px;
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #fff;
+}
+
+.jt__summary {
+  font-size: 24px;
+  line-height: 1.5;
+  color: #a9c3dc;
+}
+
+.jt__board {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.jt__board li {
+  display: grid;
+  grid-template-columns: 64px 1fr 200px;
+  align-items: center;
+  gap: 18px;
+  padding: 10px 0;
+  font-family: var(--ski-pixel);
+  font-size: 20px;
+  border-bottom: 2px solid rgba(94, 240, 255, 0.14);
+}
+
+.jt__rank {
+  color: var(--ski-cyan);
+}
+
+.jt__bar {
+  height: 16px;
+  background: rgba(94, 240, 255, 0.1);
+}
+
+.jt__bar b {
+  display: block;
+  width: calc(100% - var(--i) * 9%);
+  height: 100%;
+  background: linear-gradient(90deg, #2bd9a0, #5ef0ff);
+  box-shadow: 0 0 12px rgba(94, 240, 255, 0.6);
+  transform-origin: left;
+}
+
+.ski-surface.is-active .jt__bar b {
+  animation: jt-fill 1.1s cubic-bezier(0.2, 0.9, 0.3, 1) both;
+  animation-delay: calc(var(--i) * 0.12s + 0.3s);
+}
+
+@keyframes jt-fill {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+.jt__ticker {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 170px;
+  overflow: hidden;
+  padding: 12px 0;
+  font-family: var(--ski-pixel);
+  font-size: 22px;
+  color: #05070f;
+  white-space: nowrap;
+  background: var(--ski-yellow);
+}
+
+.jt__ticker span {
+  display: inline-block;
+  padding-left: 100%;
+  animation: jt-scroll 18s linear infinite;
+}
+
+@keyframes jt-scroll {
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+.jt .board-more {
+  color: var(--ski-cyan);
+}
+
+/* ----- Chapter 6: chalkboard menu in the lodge ----- */
+.mn {
+  height: 100%;
+  padding: 60px 80px 0;
+  color: #f4f1e8;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.06), transparent 50%),
+    radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.04), transparent 40%),
+    #1f2a24;
+  box-shadow: inset 0 0 0 14px #6b4428, inset 0 0 60px rgba(0, 0, 0, 0.5);
+}
+
+.mn__head {
+  margin-bottom: 26px;
+  text-align: center;
+}
+
+.mn__kicker {
+  margin-bottom: 10px;
+  font-family: var(--ski-pixel);
+  font-size: 18px;
+  color: #ffd57a;
+  text-transform: uppercase;
+}
+
+.mn__title {
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-size: 80px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  transform: rotate(-1.2deg);
+}
+
+.mn__headline {
+  margin-top: 8px;
+  font-size: 30px;
+  font-style: italic;
+  color: #d8d2c0;
+}
+
+.mn__items {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px 60px;
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
+}
+
+.mn__dish {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.mn__dish strong {
+  font-size: 28px;
+}
+
+.mn__dots {
+  flex: 1;
+  border-bottom: 3px dotted rgba(244, 241, 232, 0.5);
+}
+
+.mn__dish em {
+  font-size: 20px;
+  font-style: normal;
+  color: #ffd57a;
+  white-space: nowrap;
+}
+
+.mn__items p {
+  display: -webkit-box;
+  overflow: hidden;
+  font-size: 19px;
+  line-height: 1.4;
+  color: #cfc9b6;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.mn__specials {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 12px 30px;
+  padding-top: 16px;
+  border-top: 3px dashed rgba(244, 241, 232, 0.35);
+}
+
+.mn__specials > span {
+  font-family: var(--ski-pixel);
+  font-size: 18px;
+  color: #ff8a8a;
+  text-transform: uppercase;
+}
+
+.mn__specials b {
+  font-size: 30px;
+  color: #fff;
+}
+
+.mn__specials small {
+  font-size: 18px;
+  font-weight: 400;
+  color: #cfc9b6;
+}
+
+.mn__specials q {
+  flex-basis: 100%;
+  font-size: 22px;
+  font-style: italic;
+  color: #ffd57a;
+}
+
+.mn .board-more {
+  color: #ffd57a;
+}
+
+/* ----- Portrait phones ----- */
+.ski-surface.is-portrait .ts__body,
+.ski-surface.is-portrait .jt__body,
+.ski-surface.is-portrait .mn__items {
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+.ski-surface.is-portrait .ts__body,
+.ski-surface.is-portrait .jt__body {
+  padding: 24px 40px 0;
+}
+
+.ski-surface.is-portrait .ts__photo img {
+  width: 100%;
+  height: 220px;
+}
+
+.ski-surface.is-portrait .ts__photo {
+  padding: 12px 12px 18px;
+}
+
+.ski-surface.is-portrait .ts__photo figcaption,
+.ski-surface.is-portrait .ts__activities em,
+.ski-surface.is-portrait .jt__summary,
+.ski-surface.is-portrait .jt__board,
+.ski-surface.is-portrait .mn__items p {
+  display: none;
+}
+
+.ski-surface.is-portrait .ts__title,
+.ski-surface.is-portrait .mn__title {
+  font-size: 54px;
+}
+
+.ski-surface.is-portrait .jt__title {
+  font-size: 40px;
+}
+
+.ski-surface.is-portrait .ts__head,
+.ski-surface.is-portrait .jt__head {
+  padding: 30px 40px 0;
+  font-size: 14px;
+}
+
+.ski-surface.is-portrait .mn {
+  padding: 40px 40px 0;
+}
+
+.ski-surface.is-portrait .ts__headline,
+.ski-surface.is-portrait .jt__headline,
+.ski-surface.is-portrait .mn__headline {
+  font-size: 26px;
+}
