@@ -10,21 +10,12 @@
 import * as THREE from "three";
 import { CSS3DObject, CSS3DRenderer } from "three/examples/jsm/renderers/CSS3DRenderer.js";
 import { CLIFF } from "../../model/course";
-import { REST_POSE } from "../../model/tricks";
 import { clamp, clamp01, lerp, smoothRange, smoothstep } from "../../../shared/math";
 import { SURFACE_PX_HEIGHT, SURFACE_SPECS, surfaceAspect } from "../surfaces";
 import Director from "./director";
 import { createBursts, createSnowfall } from "./particles3d";
-import { RIDER } from "../drawSkier";
 import { createRider } from "./rider3d";
 import { buildWorld } from "./world3d";
-
-/* Other skiers waiting in the lift line. */
-const QUEUE_PALETTES = [
-  { ...RIDER, jacket: "#3a63d8", jacketShade: "#2a4aa8", helmet: "#f2f7ff", scarf: "#5ef0ff", ski: "#2bd9a0", skiBack: "#1f9e77" },
-  { ...RIDER, jacket: "#2bd9a0", jacketShade: "#1f9e77", helmet: "#0b1030", scarf: "#ff8a3d", ski: "#c77dff", skiBack: "#9a5ad0" },
-  { ...RIDER, jacket: "#c77dff", jacketShade: "#9a5ad0", helmet: "#ff4d4d", scarf: "#ffd23f", ski: "#3a63d8", skiBack: "#2a4aa8" },
-];
 
 const SKY = [
   { at: 0, top: "#1d2466", bottom: "#ffb38a", sun: "#ffc59a" },
@@ -81,14 +72,7 @@ export default class SkiRenderer3D {
     this.rider = createRider();
     scene.add(this.rider.root);
 
-    this.queue = this.world.queueStops.map((spot, i) => {
-      const npc = createRider(QUEUE_PALETTES[i % QUEUE_PALETTES.length]);
-      npc.root.position.set(spot.x, this.world.heightAt(spot.x, spot.z), spot.z);
-      npc.root.rotation.y = (i % 2 ? 1 : -1) * 0.25;
-      npc.phase = i * 1.7;
-      scene.add(npc.root);
-      return npc;
-    });
+
 
     this.skyUniforms = { top: { value: new THREE.Color() }, bottom: { value: new THREE.Color() } };
     this.sky = new THREE.Mesh(
@@ -149,7 +133,6 @@ export default class SkiRenderer3D {
       });
     }
     this.prev = { airborne: false, velocity: 0 };
-    this.shake = 0;
     this.squash = 0;
     this.sprayCarry = 0;
     this.sunDir = new THREE.Vector3();
@@ -217,16 +200,12 @@ export default class SkiRenderer3D {
     });
 
     this.world.update(frame);
-    this.queue.forEach((npc) => {
-      npc.update({ pose: REST_POSE, time: frame.time + npc.phase, speed: 0, airborne: false, squash: 0 });
-    });
     this.bursts.update(this.reducedMotion ? 0 : dt);
 
     this.director.update(frame, dt, {
       narrow: this.narrow,
       width: this.width,
       height: this.height,
-      shake: this.reducedMotion ? 0 : this.shake,
       reduced: this.reducedMotion,
     });
 
@@ -247,10 +226,9 @@ export default class SkiRenderer3D {
   /* The ski that comes off in the cliff crash: flies off on impact, lands
    * upright in the snow, and flies back when Alex picks it up. */
   updateLostSki(frame) {
-    this.world.surfaces.forEach((surface, index) => {
-      const { prop } = surface;
-      if (!prop) return;
-      const run = this.course.runs[index - 1];
+    this.world.lostSkis.forEach((prop) => {
+      const { run } = prop;
+      const index = run.index + 1;
       const p = frame.progress;
       let visible = false;
       let spin = 0;
@@ -300,7 +278,9 @@ export default class SkiRenderer3D {
         object.scale.setScalar((scale * SURFACE_SPECS[surface.kind].height) / SURFACE_PX_HEIGHT);
         object.position.y = y;
       }
-      const opacity = Math.round((1 - smoothRange(distance, 0.03, 0.11)) * 100) / 100;
+      // Content fades in only as the camera arrives, and out as it leaves.
+      const arriving = this.director.board === index ? this.director.boardBlend : 0;
+      const opacity = Math.round(smoothRange(arriving, 0.55, 0.95) * 100) / 100;
       object.visible = opacity > 0.01;
       // Only touch the DOM when something changed; style writes are costly.
       if (opacity !== entry.opacity) {
@@ -361,13 +341,11 @@ export default class SkiRenderer3D {
     const lastStop = this.course.stopCount - 1;
     const x = skier.x;
     const y = -skier.y;
-    this.shake = Math.max(0, this.shake - dt);
     this.squash = Math.max(0, this.squash - dt * 2.8);
 
     if (prev.airborne && !skier.airborne && frame.velocity > 0) {
       const crash = skier.phase === "tumble";
       this.burst(x, y, crash ? 160 : 70, { spread: crash ? 320 : 220, lift: crash ? 460 : 360 });
-      this.shake = crash ? 0.6 : 0.3;
       this.squash = 1;
     }
     if (skier.phase === "tumble" && Math.random() < 0.5) {
@@ -429,7 +407,6 @@ export default class SkiRenderer3D {
   dispose() {
     this.world.dispose();
     this.rider.dispose();
-    this.queue.forEach((npc) => npc.dispose());
     this.bursts.dispose();
     this.snow.dispose();
     [this.sky, this.sunDisc, this.sunGlow].forEach((m) => {

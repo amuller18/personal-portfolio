@@ -2070,123 +2070,131 @@ html.ski-mode body {
   color: #ffe9b8;
 }
 
-/* ----- Chapter 4: the ski topsheet ----- */
-.st {
-  position: relative;
+/* ----- Chapter 4: painted on the rock face ----- */
+.rk {
   height: 100%;
-  overflow: hidden;
-  color: #fff;
+  color: #f4f6fb;
   background:
-    linear-gradient(160deg, transparent 0 58%, rgba(11, 16, 48, 0.9) 58% 64%, transparent 64%),
-    linear-gradient(200deg, #ff8a3d 0%, #ff4d4d 45%, #c7333b 100%);
-  border-radius: 210px 210px 20px 20px;
+    radial-gradient(ellipse at 20% 15%, rgba(255, 255, 255, 0.12), transparent 45%),
+    radial-gradient(ellipse at 85% 80%, rgba(0, 0, 0, 0.35), transparent 50%),
+    repeating-linear-gradient(115deg, rgba(0, 0, 0, 0.08) 0 6px, transparent 6px 40px),
+    linear-gradient(160deg, #7d8597, #5d6577 55%, #4b5263);
+  border-radius: 40px;
+  box-shadow: inset 0 0 0 10px rgba(0, 0, 0, 0.18), inset 0 0 80px rgba(0, 0, 0, 0.35);
 }
 
-.st__brand {
-  position: absolute;
-  top: 250px;
-  right: -168px;
+.rk__body {
+  display: grid;
+  grid-template-columns: 1.25fr 1fr;
+  gap: 60px;
+  padding: 70px 80px 0;
+}
+
+.rk__kicker {
+  margin-bottom: 16px;
   font-family: var(--ski-pixel);
-  font-size: 46px;
-  letter-spacing: 0.12em;
-  color: rgba(255, 255, 255, 0.22);
-  transform: rotate(90deg);
-}
-
-.st__content {
-  position: relative;
-  padding: 150px 36px 0;
-}
-
-.st__kicker {
-  margin-bottom: 14px;
-  font-family: var(--ski-pixel);
-  font-size: 15px;
-  line-height: 1.6;
-  color: var(--ski-yellow);
+  font-size: 20px;
+  color: #ffd23f;
   text-transform: uppercase;
 }
 
-.st__title {
-  margin-bottom: 16px;
+.rk__title {
+  margin-bottom: 20px;
   font-family: var(--font-display, system-ui, sans-serif);
-  font-size: 52px;
+  font-size: 92px;
   font-weight: 700;
   line-height: 1;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
+  color: #ffffff;
+  text-shadow: 0 3px 0 rgba(0, 0, 0, 0.35);
 }
 
-.st__headline {
+.rk__headline {
   margin-bottom: 22px;
-  font-size: 25px;
+  font-size: 36px;
   font-weight: 600;
   line-height: 1.3;
 }
 
-.st__stats {
-  margin: 0 0 20px;
+.rk__summary {
+  margin-bottom: 20px;
+  font-size: 27px;
+  line-height: 1.5;
+  color: #dfe3ec;
 }
 
-.st__stats div {
-  padding: 10px 0;
-  border-top: 3px solid rgba(255, 255, 255, 0.3);
+.rk__link {
+  font-size: 26px;
+  font-weight: 700;
+  color: #ffd23f;
 }
 
-.st__stats dt {
-  font-size: 18px;
-  opacity: 0.85;
+.rk__stats {
+  margin: 0 0 26px;
 }
 
-.st__stats dd {
+.rk__stats div {
+  padding: 16px 0;
+  border-bottom: 4px dashed rgba(255, 255, 255, 0.35);
+}
+
+.rk__stats dd {
   margin: 0;
   font-family: var(--font-display, system-ui, sans-serif);
-  font-size: 46px;
+  font-size: 66px;
   font-weight: 700;
-  color: var(--ski-yellow);
+  color: #ffd23f;
 }
 
-.st__lesson {
-  margin-bottom: 14px;
-  padding: 14px 16px;
-  font-size: 21px;
-  line-height: 1.35;
+.rk__stats dt {
+  font-size: 24px;
+  color: #dfe3ec;
+}
+
+.rk__lesson {
+  padding: 22px 26px;
+  font-size: 27px;
+  line-height: 1.4;
   color: #0b1030;
-  background: #fff;
-  border-radius: 12px;
-}
-
-.st__link {
-  font-size: 22px;
-  font-weight: 700;
-  color: #fff;
-}
-
-.st__actions {
-  position: absolute;
-  left: 36px;
-  right: 36px;
-  bottom: 40px;
-  display: flex;
-  gap: 14px;
-}
-
-.st .ski-btn {
-  min-height: 90px;
-  font-size: 20px;
+  background: #f4f6fb;
   border-radius: 18px;
+  transform: rotate(-1deg);
 }
 
-.st .ski-btn--ghost {
-  width: 90px;
-  flex: none;
+.rk__lesson span {
+  display: block;
+  margin-bottom: 8px;
+  font-family: var(--ski-pixel);
+  font-size: 16px;
+  color: #c7333b;
+  text-transform: uppercase;
 }
 
-.st .ski-btn--primary {
-  flex: 1;
+.rk .board-more {
+  color: #ffd23f;
 }
 
-.st .ski-btn__sub {
-  font-size: 12px;
+.ski-surface.is-portrait .rk__body {
+  grid-template-columns: 1fr;
+  gap: 20px;
+  padding: 40px 40px 0;
+}
+
+.ski-surface.is-portrait .rk__summary,
+.ski-surface.is-portrait .rk__link {
+  display: none;
+}
+
+.ski-surface.is-portrait .rk__title {
+  font-size: 56px;
+}
+
+.ski-surface.is-portrait .rk__headline {
+  font-size: 26px;
+}
+
+.ski-surface.is-portrait .rk__stats dd {
+  font-size: 44px;
 }
 
 /* ----- Chapter 5: LED jumbotron ----- */

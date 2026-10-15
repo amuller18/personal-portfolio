@@ -9,21 +9,21 @@ export const SURFACES = {
   hustle: "station",
   telaviv: "trailMap",
   offline: "treeSign",
-  tutormatch: "ski",
+  tutormatch: "rock",
   traderranker: "jumbotron",
   wolfe: "menu",
 };
 
 /*
- * Per board: its height in world units, and a fixed aspect if it has one
- * (the ski is tall and thin); otherwise the board takes the viewport's shape
- * so it can fill the screen. `expand` boards grow from a small sign.
+ * Per board: its height in world units, and a fixed aspect if it has one;
+ * otherwise the board takes the viewport's shape so it can fill the screen.
+ * `expand` boards grow from a small sign.
  */
 export const SURFACE_SPECS = {
   station: { height: 300 },
   trailMap: { height: 300 },
   treeSign: { height: 300, expand: true },
-  ski: { height: 90, aspect: 0.42 },
+  rock: { height: 300 },
   jumbotron: { height: 300 },
   menu: { height: 170 },
 };

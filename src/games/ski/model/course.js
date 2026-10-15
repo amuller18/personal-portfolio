@@ -58,8 +58,8 @@ export const CLIFF = {
   approach: 0.4,
   fall: 0.52,
   tumble: 0.82,
-  skiX: 150,
-  skiZ: 40,
+  skiX: 70,
+  skiZ: -40,
 };
 
 /* The mid-mountain lodge at the end of a lodge run. */

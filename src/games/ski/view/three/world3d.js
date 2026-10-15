@@ -16,7 +16,9 @@ const FONT = '"Press Start 2P", ui-monospace, monospace';
 const LANE = 60;
 const POLE_Z = 85;
 const BOARD_Z = -140;
-const DOWN_LINE_Z = 60;
+// The chairlift's return line runs on the far side, away from the camera.
+const DOWN_LINE_Z = -60;
+const FAR_Z = -110;
 const CHAIRS_PER_LIFT = 18;
 
 const noise = (x, z) =>
@@ -206,16 +208,16 @@ export function buildWorld(course) {
     const base = { index, kind, stop, facing: 1 };
     switch (kind) {
       case "station":
-        // Lift house to the right of the lift line (+z), its wall facing the queue.
-        placements.push({ ...base, cx: sx - 120, faceZ: 300, facing: -1 });
+        // Lift house just ahead of the lift line, on the far side.
+        placements.push({ ...base, cx: sx + 60 + SURFACE_MAX_WIDTH / 2, faceZ: -150 });
         break;
       case "treeSign":
         // Small trail sign at the bottom of the glade, on the left.
         placements.push({ ...base, cx: sx + 120, faceZ: -100 });
         break;
-      case "ski":
-        // The lost ski, stuck upright in the snow just past where Alex stopped.
-        placements.push({ ...base, cx: run.cliff.skiX, faceZ: run.cliff.skiZ });
+      case "rock":
+        // A rock face beside the landing below the cliff.
+        placements.push({ ...base, cx: sx + 60 + SURFACE_MAX_WIDTH / 2, faceZ: -160 });
         break;
       case "menu":
         // Chalkboard menu on the lodge's back wall, inside.
@@ -262,8 +264,8 @@ export function buildWorld(course) {
   const rand = seededRandom(2028);
   const treeSpots = [];
   for (let x = minX + 300; x < maxX - 300; x += 26 + rand() * 40) {
-    const side = rand() < 0.5 ? -1 : 1;
-    const z = side * (115 + rand() ** 1.6 * 1700);
+    // Trees only on the far side: the camera watches from the near side.
+    const z = -(115 + rand() ** 1.6 * 1700);
     const at = course.descentAt(x);
     const run = course.runAt(x);
     // Keep sight lines open where the camera works: stops, jumps, the lift line, boards.
@@ -285,8 +287,8 @@ export function buildWorld(course) {
       for (let local = 140; local < run.length - 220; local += 30 + grand() * 22) {
         const x = run.start + local;
         const line = course.lineZ(x);
-        [-1, 1].forEach((side) => {
-          const z = line + side * (78 + grand() ** 1.4 * 330);
+        [0, 1].forEach(() => {
+          const z = line - (78 + grand() ** 1.4 * 330);
           if (!inClearZone(x, z)) {
             treeSpots.push({ x, z, scale: 0.75 + grand() * 0.7, yaw: grand() * Math.PI, shade: grand() });
           }
@@ -295,8 +297,9 @@ export function buildWorld(course) {
       for (let peak = 120; peak < run.length - 300; peak += 240) {
         const x = run.start + peak;
         const line = course.lineZ(x);
-        if (Math.abs(line) > 40) {
-          treeSpots.push({ x, z: -Math.sign(line) * 22, scale: 1.05, yaw: grand() * Math.PI, shade: grand() });
+        // A tree behind each turn that swings toward the camera.
+        if (line > 40) {
+          treeSpots.push({ x, z: -22, scale: 1.05, yaw: grand() * Math.PI, shade: grand() });
         }
       }
     });
@@ -387,8 +390,10 @@ export function buildWorld(course) {
   course.stops.forEach((stop, index) => {
     if (surfaceKindFor(stop) || stop.kind === "start") return;
     const x = course.stopX(index);
+    // Gates stand beside the run, banner facing the camera.
     const gate = new THREE.Group();
-    gate.position.set(x, heightAt(x, 0), 0);
+    gate.position.set(x + 40, heightAt(x + 40, FAR_Z), FAR_Z);
+    gate.rotation.y = Math.PI / 2;
     group.add(gate);
     const finish = stop.kind === "finish";
     const span = finish ? POLE_Z * 1.4 : POLE_Z;
@@ -424,8 +429,8 @@ export function buildWorld(course) {
 
   // Base area: a ski rack and a sign pointing to the lift.
   const rack = new THREE.Group();
-  rack.position.set(-70, heightAt(-70, 120), 120);
-  rack.rotation.y = Math.PI - 0.2;
+  rack.position.set(-90, heightAt(-90, -120), -120);
+  rack.rotation.y = 0.15;
   group.add(rack);
   [-1, 1].forEach((side) => {
     const leg = mesh(new THREE.BoxGeometry(5, 46, 5), standard("#6b4a2f"), rack);
@@ -440,8 +445,8 @@ export function buildWorld(course) {
   });
 
   const sign = new THREE.Group();
-  sign.position.set(170, heightAt(170, 110), 110);
-  sign.rotation.y = -0.35;
+  sign.position.set(200, heightAt(200, -105), -105);
+  sign.rotation.y = 0.1;
   group.add(sign);
   const post = mesh(new THREE.BoxGeometry(5, 64, 5), standard("#6b4a2f"), sign);
   post.position.y = 32;
@@ -463,11 +468,10 @@ export function buildWorld(course) {
 
   // Lift-line maze: posts and ropes leading to the loading point.
   const queueX = placements.find((place) => place.kind === "station");
-  const queueStops = [];
   if (queueX) {
     const sx = stopXs[queueX.index];
     const ropeMaterial = keep(new THREE.LineBasicMaterial({ color: "#ff4d4d" }));
-    [-26, 26, 96, 142].forEach((z) => {
+    [-26, 26].forEach((z) => {
       const points = [];
       for (let x = sx - 200; x <= sx + 40; x += 40) {
         const ground = heightAt(x, z);
@@ -478,8 +482,7 @@ export function buildWorld(course) {
       group.add(new THREE.Line(keep(new THREE.BufferGeometry().setFromPoints(points)), ropeMaterial));
     });
     // Other skiers wait in the next lane over, so the walk-in stays clear.
-    // Clear of the returning chairs (z = 60), so nobody stands in their path.
-    queueStops.push({ x: sx + 20, z: 119 }, { x: sx - 30, z: 121 }, { x: sx - 82, z: 117 });
+
   }
 
   // Base lodge.
@@ -572,7 +575,7 @@ export function buildWorld(course) {
       const column = mesh(new THREE.BoxGeometry(14, 1, 14), steel, group);
       column.scale.y = cableY + 24 - ground;
       column.position.set(x, ground + column.scale.y / 2, DOWN_LINE_Z / 2);
-      const wheel = mesh(new THREE.CylinderGeometry(DOWN_LINE_Z / 2 + 4, DOWN_LINE_Z / 2 + 4, 4, 20), steel, group);
+      const wheel = mesh(new THREE.CylinderGeometry(Math.abs(DOWN_LINE_Z) / 2 + 4, Math.abs(DOWN_LINE_Z) / 2 + 4, 4, 20), steel, group);
       wheel.position.set(x, cableY, DOWN_LINE_Z / 2);
       const cap = mesh(new THREE.BoxGeometry(96, 30, 92), housing, group);
       cap.position.set(x, cableY + 26, DOWN_LINE_Z / 2);
@@ -589,7 +592,7 @@ export function buildWorld(course) {
       const column = mesh(new THREE.BoxGeometry(9, 1, 9), steel, group);
       column.scale.y = top - ground;
       column.position.set(x, ground + column.scale.y / 2, DOWN_LINE_Z / 2);
-      const arm = mesh(new THREE.BoxGeometry(6, 6, DOWN_LINE_Z + 28), steel, group);
+      const arm = mesh(new THREE.BoxGeometry(6, 6, Math.abs(DOWN_LINE_Z) + 28), steel, group);
       arm.position.set(x, top, DOWN_LINE_Z / 2);
       [0, DOWN_LINE_Z].forEach((z) => {
         const sheave = mesh(new THREE.BoxGeometry(22, 5, 5), housing, group);
@@ -840,36 +843,63 @@ export function buildWorld(course) {
     surface.center.y = fullY;
   }
 
-  /* Chapter 4: the ski that came off in the crash, standing up in the snow. */
-  function buildSki(place) {
-    const spec = SURFACE_SPECS.ski;
-    const ground = heightAt(place.cx, place.faceZ);
-    const centerY = ground + spec.height / 2 - 10;
+  /* Chapter 4: a rock face beside the landing below the cliff. */
+  function buildRock(place) {
+    const floor = floorAt(place.cx - SURFACE_MAX_WIDTH / 2, place.cx + SURFACE_MAX_WIDTH / 2, place.faceZ);
+    const centerY = floor + 40 + SURFACE_WORLD_HEIGHT / 2;
     const site = makeSite(place, centerY);
-    site.rotation.z = 0.1;
-    const topsheet = standard("#ff8a3d");
-    const board = mesh(new THREE.BoxGeometry(1, 1, 3), topsheet, site);
-    board.position.z = -1.6;
-    // Rounded tip: a half disc on top of the plank.
-    const tipShape = new THREE.Shape();
-    tipShape.absarc(0, 0, 1, 0, Math.PI, false);
-    tipShape.closePath();
-    const tipGeometry = new THREE.ExtrudeGeometry(tipShape, { depth: 3, bevelEnabled: false, curveSegments: 14 });
-    tipGeometry.translate(0, 0, -1.5);
-    const tip = mesh(tipGeometry, topsheet, site);
-    const mound = mesh(new THREE.SphereGeometry(30, 10, 6), snowCap, group);
-    mound.scale.set(1.4, 0.35, 1);
-    mound.position.set(place.cx, ground, place.faceZ);
-    const resize = (w, h) => {
-      board.scale.set(w + 4, h + 4, 1);
-      tip.scale.set((w + 4) / 2, (w + 4) / 2, 1);
-      tip.position.set(0, h / 2 + 2, -1.6);
-    };
-    registerSurface(place, centerY, resize, {
-      rotationZ: 0.1,
-      prop: { site, mound, home: site.position.clone(), rotationZ: 0.1 },
+    const granite = standard("#7d8597", { roughness: 1 });
+    const darkRock = standard("#5d6577", { roughness: 1 });
+    const slab = mesh(new THREE.BoxGeometry(1, 1, 40), darkRock, site);
+    slab.position.z = -22;
+    const boulderGeometry = new THREE.DodecahedronGeometry(1, 0);
+    const boulders = [
+      [-0.5, 0.5, 1.1, granite],
+      [0.5, 0.48, 0.9, darkRock],
+      [-0.52, -0.42, 0.8, darkRock],
+      [0.53, -0.45, 1.0, granite],
+      [0, 0.56, 0.7, granite],
+      [-0.2, -0.56, 0.6, granite],
+    ].map(([u, v, size, material]) => {
+      const rock = mesh(boulderGeometry, material, site);
+      rock.userData = { u, v, size };
+      rock.rotation.set(u * 3, v * 5, u * v * 7);
+      return rock;
     });
+    const caps = boulders.slice(0, 2).map(() => mesh(new THREE.SphereGeometry(1, 8, 5, 0, Math.PI * 2, 0, Math.PI / 2), snowCap, site));
+    const resize = (w, h) => {
+      slab.scale.set(w + 70, h + 70, 1);
+      boulders.forEach((rock) => {
+        const { u, v, size } = rock.userData;
+        const radius = 70 * size;
+        rock.scale.setScalar(radius);
+        rock.position.set(u * (w + 40), v * (h + 40), -18);
+      });
+      caps.forEach((cap, i) => {
+        const rock = boulders[i];
+        cap.scale.set(rock.scale.x * 0.9, rock.scale.x * 0.35, rock.scale.x * 0.9);
+        cap.position.set(rock.position.x, rock.position.y + rock.scale.x * 0.7, rock.position.z);
+      });
+    };
+    registerSurface(place, centerY, resize);
   }
+
+  /* The ski that comes off in the cliff crash: a normal-sized prop the
+   * renderer flies off on impact and back when Alex picks it up. */
+  const lostSkis = course.runs
+    .filter((run) => run.cliff)
+    .map((run) => {
+      const site = new THREE.Group();
+      const plank = mesh(new THREE.BoxGeometry(7, 64, 2), standard("#ff8a3d"), site);
+      plank.position.y = 32;
+      const tip = mesh(new THREE.BoxGeometry(7, 8, 2), standard("#ff8a3d"), site);
+      tip.position.set(0, 66, 2);
+      tip.rotation.x = -0.5;
+      site.visible = false;
+      group.add(site);
+      const home = new THREE.Vector3(run.cliff.skiX, heightAt(run.cliff.skiX, run.cliff.skiZ) - 14, run.cliff.skiZ);
+      return { run, site, home, rotationZ: 0.14 };
+    });
 
   /* Chapter 5: a terrain-park jumbotron on steel legs. */
   function buildJumbotron(place) {
@@ -980,7 +1010,7 @@ export function buildWorld(course) {
       station: buildStation,
       trailMap: buildTrailMap,
       treeSign: buildTreeSign,
-      ski: buildSki,
+      rock: buildRock,
       jumbotron: buildJumbotron,
       menu: buildLodge,
     };
@@ -1060,5 +1090,5 @@ export function buildWorld(course) {
     trees.dispose();
   }
 
-  return { group, heightAt, update, refreshLabels, dispose, surfaces, queueStops };
+  return { group, heightAt, update, refreshLabels, dispose, surfaces, lostSkis };
 }

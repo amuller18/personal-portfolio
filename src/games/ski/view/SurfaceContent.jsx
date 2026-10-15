@@ -255,46 +255,51 @@ function TreeSign({ stop, onNext, onPrev }) {
   );
 }
 
-/* Chapter 4: printed on the topsheet of the ski that came off in the crash. */
-function SkiTopsheet({ stop, active, nextTrick, onNext, onPrev }) {
+/* Chapter 4: painted on the rock face beside the landing below the cliff. */
+function RockFace({ stop, active, nextTrick, onNext, onPrev }) {
   const link = stop.source && stop.source.link;
   return (
-    <article className="st" aria-label={`Chapter ${stop.number}: ${stop.title}`}>
-      <span className="st__brand" aria-hidden="true">
-        TUTORMATCH
-      </span>
-      <div className="st__content">
-        <p className="st__kicker">
-          Checkpoint {stop.number} · {stop.era}
-        </p>
-        <h2 className="st__title">{stop.title}</h2>
-        <p className="st__headline">{stop.headline}</p>
-        <dl className="st__stats">
-          {stop.stats.map((stat, i) => (
-            <div key={stat.label}>
-              <dt>{stat.label}</dt>
-              <dd>
-                <CountUp key={active ? "on" : "off"} value={stat.value} delay={300 + i * 150} />
-              </dd>
-            </div>
-          ))}
-        </dl>
-        {stop.lesson && <p className="st__lesson">{stop.lesson}</p>}
-        {link && (
-          <a className="st__link" href={link.href} target="_blank" rel="noreferrer">
-            {link.label} ↗
-          </a>
-        )}
+    <article className="rk" aria-label={`Chapter ${stop.number}: ${stop.title}`}>
+      <div className="rk__body">
+        <section className="rk__lead">
+          <p className="rk__kicker">
+            Checkpoint {stop.number} · {stop.era}
+          </p>
+          <h2 className="rk__title">{stop.title}</h2>
+          <p className="rk__headline">{stop.headline}</p>
+          <p className="rk__summary">{stop.summary}</p>
+          {link && (
+            <a className="rk__link" href={link.href} target="_blank" rel="noreferrer">
+              {link.label} ↗
+            </a>
+          )}
+        </section>
+        <aside className="rk__side">
+          <dl className="rk__stats">
+            {stop.stats.map((stat, i) => (
+              <div key={stat.label}>
+                <dd>
+                  <CountUp key={active ? "on" : "off"} value={stat.value} delay={300 + i * 150} />
+                </dd>
+                <dt>{stat.label}</dt>
+              </div>
+            ))}
+          </dl>
+          {stop.lesson && (
+            <p className="rk__lesson">
+              <span>Lesson from the fall</span>
+              {stop.lesson}
+            </p>
+          )}
+        </aside>
       </div>
-      <footer className="st__actions">
-        <button type="button" className="ski-btn ski-btn--ghost" onClick={onPrev} aria-label="Back to the previous checkpoint">
-          ◀
-        </button>
-        <button type="button" className="ski-btn ski-btn--primary" onClick={onNext}>
-          <span className="ski-btn__main">Get up ▶</span>
-          {nextTrick && <span className="ski-btn__sub">Next jump · {nextTrick.name}</span>}
-        </button>
-      </footer>
+      <Actions
+        onPrev={onPrev}
+        onNext={onNext}
+        label="Dust off"
+        sub={nextTrick ? `Next jump · ${nextTrick.name}` : null}
+        href={stop.href}
+      />
     </article>
   );
 }
@@ -387,7 +392,7 @@ const BOARDS = {
   station: StationWall,
   trailMap: TrailMap,
   treeSign: TreeSign,
-  ski: SkiTopsheet,
+  rock: RockFace,
   jumbotron: Jumbotron,
   menu: Menu,
 };
