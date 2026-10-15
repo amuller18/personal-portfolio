@@ -5,29 +5,10 @@
  * views. Here `spin` is a real rotation around the vertical axis.
  */
 import * as THREE from "three";
-import { clamp01, lerp } from "../../../shared/math";
 import { RIDER, SKIER_SCALE } from "../drawSkier";
+import { PIVOT, solveRig } from "../rig";
 
-const PIVOT = 26;
-const THIGH = 17;
 const UP = new THREE.Vector3(0, 1, 0);
-
-function kneeFor(hip, ankle) {
-  const dx = ankle.x - hip.x;
-  const dy = ankle.y - hip.y;
-  const d = Math.max(0.01, Math.min(Math.hypot(dx, dy), THIGH * 2 - 0.01));
-  const off = Math.sqrt(Math.max(0, THIGH * THIGH - (d / 2) ** 2));
-  // Perpendicular that points forward (+x): knees bend toward the ski tips.
-  let nx = dy / d;
-  let ny = -dx / d;
-  if (nx < 0) {
-    nx = -nx;
-    ny = -ny;
-  }
-  return { x: (hip.x + ankle.x) / 2 + nx * off, y: (hip.y + ankle.y) / 2 + ny * off };
-}
-
-const mix = (a, b, t) => ({ x: lerp(a.x, b.x, t), y: lerp(a.y, b.y, t) });
 
 export function createRider() {
   const root = new THREE.Group();
@@ -83,7 +64,7 @@ export function createRider() {
     gloveFront: add(new THREE.SphereGeometry(2.8, 6, 5), RIDER.goggles),
     gloveBack: add(new THREE.SphereGeometry(2.8, 6, 5), RIDER.goggles),
     head: new THREE.Group(),
-    scarf: [0, 1, 2, 3].map(() => add(new THREE.BoxGeometry(5, 3, 3), RIDER.scarf)),
+    scarf: [0, 1, 2].map(() => add(new THREE.BoxGeometry(6, 3, 3), RIDER.scarf)),
   };
 
   body.add(parts.head);
@@ -110,64 +91,38 @@ export function createRider() {
   function update({ pose, time, speed, airborne, squash }) {
     pivot.rotation.z = (-pose.rotation * Math.PI) / 180;
     pivot.rotation.y = pose.spin * Math.PI * 2;
+    const rig = solveRig(pose, { time, speed, airborne, squash });
 
-    const carve = airborne ? 0 : 0.15 + speed * 0.3;
-    const bend = clamp01(Math.max(pose.tuck, carve) + squash * 0.6);
-    const lift = pose.grab * 6 + pose.tuck * 3;
+    // 2D angles are clockwise-positive in a y-down plane; flip for 3D.
+    parts.skiFront.position.copy(v(rig.front, 5.5));
+    parts.skiFront.rotation.set(0, pose.cross * 0.55, -(rig.frontAngle - pose.cross * 0.6));
+    parts.skiBack.position.copy(v(rig.back, -5.5));
+    parts.skiBack.rotation.set(0, -pose.cross * 0.55, -(rig.backAngle + pose.cross * 0.6));
 
-    // Side-plane joints (x forward, y down), same rig as the 2D sprite.
-    const hip = { x: -3 - bend * 4, y: -(35 - bend * 13) };
-    const front = { x: 4 + pose.split * 14, y: -pose.split * 4 - lift };
-    const back = { x: -4 - pose.split * 14, y: -pose.split * 4 - lift };
-    const shoulder = { x: hip.x + 7 + bend * 7, y: hip.y - 21 + bend * 5 };
-    const head = { x: shoulder.x + 3, y: shoulder.y - 9 };
+    place(parts.thighFront, v(rig.hip, 3.5), v(rig.kneeFront, 5));
+    place(parts.shinFront, v(rig.kneeFront, 5), v(rig.ankleFront, 5));
+    place(parts.thighBack, v(rig.hip, -3.5), v(rig.kneeBack, -5));
+    place(parts.shinBack, v(rig.kneeBack, -5), v(rig.ankleBack, -5));
 
-    parts.skiFront.position.set(front.x, -front.y, 5.5);
-    parts.skiFront.rotation.set(0, pose.cross * 0.55, pose.split * 0.45);
-    parts.skiBack.position.set(back.x, -back.y, -5.5);
-    parts.skiBack.rotation.set(0, -pose.cross * 0.55, -pose.split * 0.45);
-
-    [
-      [front, 5, parts.thighFront, parts.shinFront],
-      [back, -5, parts.thighBack, parts.shinBack],
-    ].forEach(([foot, z, thigh, shin]) => {
-      const ankle = { x: foot.x, y: foot.y - 7 };
-      const knee = kneeFor(hip, ankle);
-      place(thigh, v(hip, z * 0.7), v(knee, z));
-      place(shin, v(knee, z), v(ankle, z));
-    });
-
-    place(parts.torso, a.copy(v(hip, 0)), b.copy(v(shoulder, 0)));
-    parts.head.position.copy(v(head, 0));
-
-    const rest = { x: shoulder.x + 12 - bend * 2, y: shoulder.y + 11 };
-    const raised = { x: shoulder.x + 8, y: shoulder.y - 14 };
-    const grabbed = { x: front.x + 8, y: front.y - 4 };
-    const hand = mix(mix(rest, raised, pose.arms), grabbed, pose.grab);
-    const backHand = mix(rest, raised, pose.arms);
-    const tipFor = (h) =>
-      mix(mix({ x: h.x - 26, y: h.y + 24 }, { x: h.x + 16, y: h.y - 22 }, pose.arms), { x: h.x - 30, y: h.y - 4 }, Math.max(pose.grab, pose.tuck * 0.6));
+    place(parts.torso, a.copy(v(rig.hip, 0)), b.copy(v(rig.shoulder, 0)));
+    parts.head.position.copy(v(rig.head, 0));
 
     const spread = 9 + pose.arms * 8;
     [
-      [hand, spread, parts.armFront, parts.poleFront, parts.gloveFront],
-      [backHand, -spread, parts.armBack, parts.poleBack, parts.gloveBack],
-    ].forEach(([h, z, arm, pole, glove]) => {
+      [rig.hand, rig.tipFront, spread, parts.armFront, parts.poleFront, parts.gloveFront],
+      [rig.backHand, rig.tipBack, -spread, parts.armBack, parts.poleBack, parts.gloveBack],
+    ].forEach(([h, tip, z, arm, pole, glove]) => {
       const handV = v(h, z);
-      place(arm, v(shoulder, Math.sign(z) * 6), handV);
-      place(pole, handV, v(tipFor(h), z * 1.1));
+      place(arm, v(rig.shoulder, Math.sign(z) * 6), handV);
+      place(pole, handV, v(tip, z * 1.1));
       glove.position.copy(handV);
     });
 
-    const flutter = 1 + speed * 2.5;
     parts.scarf.forEach((piece, i) => {
-      const k = i + 1;
-      piece.position.set(
-        shoulder.x - 2 - k * 5,
-        -(shoulder.y - 2) - k * 1.2 + Math.sin(time * 14 + k * 1.3) * flutter * k * 0.5,
-        Math.cos(time * 11 + k) * flutter * k * 0.4,
-      );
-      piece.rotation.z = Math.sin(time * 14 + k) * 0.4;
+      const point = rig.scarf[Math.min(i, rig.scarf.length - 1)];
+      const lead = i === 0 ? rig.neck : rig.scarf[i - 1];
+      piece.position.set((point.x + lead.x) / 2, -(point.y + lead.y) / 2, point.z || 0);
+      piece.rotation.z = Math.sin(time * 14 + i) * 0.4;
     });
   }
 

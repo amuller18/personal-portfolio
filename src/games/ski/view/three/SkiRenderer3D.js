@@ -2,9 +2,15 @@
  * 3D view of the run (three.js). Same contract as the 2D SkiRenderer:
  * resize(), render(frame, dt), reducedMotion, dispose(). It reads model frames
  * and never writes to the model; all effects here are cosmetic.
+ *
+ * Chapter boards (lift station wall, trail map) are real DOM placed in the
+ * scene with CSS3DRenderer, so text stays sharp and buttons stay clickable.
+ * `surfaceMounts` exposes one element per board for React to portal into.
  */
 import * as THREE from "three";
+import { CSS3DObject, CSS3DRenderer } from "three/examples/jsm/renderers/CSS3DRenderer.js";
 import { clamp, clamp01, lerp, smoothRange } from "../../../shared/math";
+import { SURFACE_PX_HEIGHT, SURFACE_WORLD_HEIGHT, surfaceAspect } from "../surfaces";
 import Director from "./director";
 import { createBursts, createSnowfall } from "./particles3d";
 import { createRider } from "./rider3d";
@@ -46,7 +52,7 @@ function skyColor(t, key, out) {
 }
 
 export default class SkiRenderer3D {
-  constructor(canvas, course) {
+  constructor(canvas, course, { surfaceLayer = null } = {}) {
     this.canvas = canvas;
     this.course = course;
     this.reducedMotion = false;
@@ -103,7 +109,26 @@ export default class SkiRenderer3D {
     this.snow = createSnowfall();
     scene.add(this.bursts.points, this.snow.points);
 
-    this.director = new Director(this.camera, course, this.world.heightAt);
+    this.director = new Director(this.camera, course, this.world.heightAt, this.world.surfaces);
+
+    // Boards: one CSS3D object per board, positioned on its frame.
+    this.surfaceLayer = surfaceLayer;
+    this.surfaceMounts = {};
+    this.surfaceObjects = new Map();
+    if (surfaceLayer) {
+      this.css = new CSS3DRenderer({ element: surfaceLayer });
+      this.cssScene = new THREE.Scene();
+      this.world.surfaces.forEach((surface, index) => {
+        const mount = document.createElement("div");
+        mount.className = `ski-surface ski-surface--${surface.kind}`;
+        const object = new CSS3DObject(mount);
+        object.position.copy(surface.center);
+        object.scale.setScalar(SURFACE_WORLD_HEIGHT / SURFACE_PX_HEIGHT);
+        this.cssScene.add(object);
+        this.surfaceObjects.set(index, { object, mount });
+        this.surfaceMounts[index] = mount;
+      });
+    }
     this.prev = { airborne: false, velocity: 0 };
     this.shake = 0;
     this.squash = 0;
@@ -130,6 +155,19 @@ export default class SkiRenderer3D {
     this.renderer.setSize(this.width, this.height, false);
     this.camera.aspect = this.width / this.height;
     this.camera.updateProjectionMatrix();
+
+    // Boards take the viewport's shape so they can fill it.
+    const aspect = surfaceAspect(this.width, this.height);
+    const pxWidth = Math.round(SURFACE_PX_HEIGHT * aspect);
+    const worldWidth = (pxWidth * SURFACE_WORLD_HEIGHT) / SURFACE_PX_HEIGHT;
+    this.world.setSurfaceSize(worldWidth, SURFACE_WORLD_HEIGHT);
+    this.director.surfaceSize = { width: worldWidth, height: SURFACE_WORLD_HEIGHT };
+    this.surfaceObjects.forEach(({ mount }) => {
+      mount.style.width = `${pxWidth}px`;
+      mount.style.height = `${SURFACE_PX_HEIGHT}px`;
+      mount.classList.toggle("is-portrait", aspect < 0.95);
+    });
+    if (this.css) this.css.setSize(this.width, this.height);
   }
 
   render(frame, rawDt) {
@@ -164,6 +202,7 @@ export default class SkiRenderer3D {
       width: this.width,
       height: this.height,
       shake: this.reducedMotion ? 0 : this.shake,
+      reduced: this.reducedMotion,
     });
 
     const cam = this.camera.position;
@@ -176,6 +215,23 @@ export default class SkiRenderer3D {
     this.sun.target.position.set(skier.x, -skier.y, 0);
 
     this.renderer.render(this.scene, this.camera);
+    this.renderSurfaces(frame);
+  }
+
+  /* Boards fade in only around their own stop, so the DOM layer never draws
+   * over unrelated 3D content, and only the one you're at is clickable. */
+  renderSurfaces(frame) {
+    if (!this.css) return;
+    this.surfaceObjects.forEach(({ object, mount }, index) => {
+      const distance = Math.abs(frame.progress - index);
+      const opacity = 1 - smoothRange(distance, 0.03, 0.11);
+      object.visible = opacity > 0.01;
+      mount.style.opacity = opacity.toFixed(3);
+      const active = distance < 0.05 && Math.abs(frame.velocity) < 0.3;
+      mount.classList.toggle("is-active", active);
+      mount.style.pointerEvents = active ? "auto" : "none";
+    });
+    this.css.render(this.cssScene, this.camera);
   }
 
   updateAtmosphere(t) {
@@ -293,6 +349,12 @@ export default class SkiRenderer3D {
       m.material.dispose();
     });
     this.renderer.dispose();
+    if (this.cssScene) {
+      this.surfaceObjects.forEach(({ object }) => this.cssScene.remove(object));
+      this.surfaceLayer.replaceChildren();
+    }
+    this.surfaceObjects.clear();
+    this.surfaceMounts = {};
     this.world = null;
   }
 }

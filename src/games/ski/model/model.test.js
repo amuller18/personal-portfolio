@@ -1,6 +1,6 @@
 import { storyOrder } from "../../../data/story";
 import { buildStoryStops } from "../../shared/storyStops";
-import { KICKER, LANDING, TOUCHDOWN, createCourse, paceRun } from "./course";
+import { KICKER, LANDING, LIFT, TOUCHDOWN, createCourse, paceRun } from "./course";
 import SkiModel from "./SkiModel";
 import { FINALE, TRICKS } from "./tricks";
 
@@ -29,9 +29,13 @@ describe("story stops", () => {
 });
 
 describe("course", () => {
-  it("has one jump per run and ends on the finale", () => {
-    expect(course.jumps).toHaveLength(stops.length - 1);
+  it("has one jump per descent, a chairlift up to the trail map, and ends on the finale", () => {
+    const descents = course.runs.filter((run) => run.type === "descent");
+    expect(course.jumps).toHaveLength(descents.length);
     expect(course.jumps[course.jumps.length - 1].trick).toBe(FINALE);
+    const liftRun = course.runs.find((run) => run.type === "lift");
+    expect(stops[liftRun.index + 1].id).toBe("telaviv");
+    expect(course.lifts).toHaveLength(1);
   });
 
   it("paces runs monotonically from 0 to 1", () => {
@@ -46,10 +50,13 @@ describe("course", () => {
     expect(paceRun(TOUCHDOWN)).toBeCloseTo(LANDING);
   });
 
-  it("is downhill from the start gate to the finish", () => {
-    for (let i = 1; i < course.stopCount; i += 1) {
-      expect(course.groundY(course.stopX(i))).toBeGreaterThan(course.groundY(course.stopX(i - 1)));
-    }
+  it("climbs on lift runs, drops on descents, and ends at the base", () => {
+    course.runs.forEach((run) => {
+      const drop = course.groundY(run.end) - course.groundY(run.start);
+      if (run.type === "lift") expect(drop).toBeLessThan(-300);
+      else expect(drop).toBeGreaterThan(300);
+    });
+    expect(course.groundY(course.finishX)).toBeGreaterThan(course.groundY(0));
     expect(course.elevationAt(course.groundY(0))).toBeCloseTo(11000);
     expect(course.elevationAt(course.groundY(course.finishX))).toBeCloseTo(7760);
   });
@@ -76,6 +83,28 @@ describe("course", () => {
       expect(Math.abs(Math.cos(end.spin * Math.PI * 2) - 1)).toBeLessThan(1e-6);
       ["tuck", "split", "cross", "grab", "arms"].forEach((key) => expect(end[key]).toBeCloseTo(0, 5));
     });
+  });
+
+  it("keeps the rider seated and clear of the snow for the whole chairlift ride", () => {
+    const run = course.runs.find((r) => r.type === "lift");
+    for (let f = LIFT.load; f < LIFT.ride; f += 0.004) {
+      const pose = course.poseAt(run.index + f);
+      expect(pose.phase).toBe("lift");
+      expect(pose.pose.sit).toBe(1);
+      expect(pose.lift).not.toBeNull();
+      expect(course.groundY(pose.x) - pose.y).toBeGreaterThanOrEqual(-0.5);
+    }
+    const mid = course.poseAt(run.index + (LIFT.load + LIFT.ride) / 2);
+    expect(course.groundY(mid.x) - mid.y).toBeGreaterThan(80);
+  });
+
+  it("moves continuously through every phase change", () => {
+    let previous = course.poseAt(0);
+    for (let p = 0.0005; p <= course.stopCount - 1; p += 0.0005) {
+      const pose = course.poseAt(p);
+      expect(Math.hypot(pose.x - previous.x, pose.y - previous.y)).toBeLessThan(12);
+      previous = pose;
+    }
   });
 
   it("goes airborne exactly between the lip and the landing", () => {
@@ -116,6 +145,16 @@ describe("SkiModel", () => {
     const seconds = runUntilSettled(model);
     expect(seconds).toBeGreaterThan(1.5);
     expect(seconds).toBeLessThan(4);
+  });
+
+  it("rides the chairlift slower than a ski run", () => {
+    const model = new SkiModel(course);
+    model.teleport(1);
+    model.setTarget(2);
+    const seconds = runUntilSettled(model);
+    expect(seconds).toBeGreaterThan(4);
+    expect(seconds).toBeLessThan(10);
+    expect(model.getSnapshot().activeStop).toBe(2);
   });
 
   it("reports the trick while airborne and the points on landing", () => {

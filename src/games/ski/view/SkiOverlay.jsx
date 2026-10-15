@@ -4,10 +4,19 @@
  * controller command and never touches the model directly.
  */
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Link } from "react-router-dom";
-import { usePrefersReducedMotion } from "../../../hooks/useInView";
 import { BASE_FT, TOP_FT } from "../model/course";
+import CountUp from "./CountUp";
 import { accentFor } from "./palette";
+import SurfaceContent from "./SurfaceContent";
+import { surfaceKindFor } from "./surfaces";
+
+/* The trick on the jump right after a stop (lift runs have none). */
+const nextTrickAfter = (course, index) => {
+  const run = course.runs[index];
+  return run && run.jump ? run.jump.trick : null;
+};
 
 const pad = (value, length = 6) => String(value).padStart(length, "0");
 const two = (value) => String(value).padStart(2, "0");
@@ -15,45 +24,6 @@ const formatNumber = (value) => value.toLocaleString("en-US");
 
 /* Entrance order for staggered card sections. */
 const step = (i) => ({ "--i": i });
-
-/* Counts the numeric part of a value ("$10K+", "4+ hrs", 4850) up from zero. */
-function CountUp({ value, duration = 900, delay = 0, format = (n) => n }) {
-  const text = String(value);
-  const match = /^([^0-9]*)([\d,]+)(.*)$/.exec(text);
-  const hasNumber = Boolean(match);
-  const target = match ? Number(match[2].replace(/,/g, "")) : 0;
-  const reduced = usePrefersReducedMotion();
-  const [current, setCurrent] = useState(reduced ? target : 0);
-
-  useEffect(() => {
-    if (!hasNumber) return undefined;
-    if (reduced) {
-      setCurrent(target);
-      return undefined;
-    }
-    let frame = 0;
-    let start = 0;
-    const tick = (now) => {
-      if (!start) start = now + delay;
-      const t = Math.min(1, Math.max(0, (now - start) / duration));
-      setCurrent(Math.round(target * (1 - (1 - t) ** 3)));
-      if (t < 1) frame = window.requestAnimationFrame(tick);
-    };
-    frame = window.requestAnimationFrame(tick);
-    return () => window.cancelAnimationFrame(frame);
-  }, [hasNumber, target, reduced, duration, delay]);
-
-  if (!match) return <span>{text}</span>;
-  return (
-    <span aria-label={text}>
-      <span aria-hidden="true">
-        {match[1]}
-        {format(current)}
-        {match[3]}
-      </span>
-    </span>
-  );
-}
 
 function Hud({ snapshot, stops, jumps, onSelect }) {
   const lastStop = stops.length - 1;
@@ -377,12 +347,13 @@ function useLingering(activeStop) {
   return activeStop >= 0 ? activeStop : shown;
 }
 
-function StopCard({ snapshot, stops, jumps, controller }) {
-  const index = useLingering(snapshot.activeStop);
+function StopCard({ snapshot, activeStop, course, controller }) {
+  const { stops, jumps } = course;
+  const index = useLingering(activeStop);
   if (index < 0) return null;
   const stop = stops[index];
-  const leaving = snapshot.activeStop !== index;
-  const nextTrick = jumps[index] ? jumps[index].trick : null;
+  const leaving = activeStop !== index;
+  const nextTrick = nextTrickAfter(course, index);
   const checkpoints = stops.length - 2;
 
   return (
@@ -411,15 +382,37 @@ function StopCard({ snapshot, stops, jumps, controller }) {
   );
 }
 
-export default function SkiOverlay({ snapshot, course, controller }) {
+export default function SkiOverlay({ snapshot, course, controller, surfaceMounts = {} }) {
   const { stops, jumps } = course;
   const active = stops[snapshot.activeStop];
+  // Stops with a board in the 3D world don't get a floating card or banner.
+  const onBoard = Boolean(surfaceMounts[snapshot.activeStop]);
+  const cardStop = onBoard ? -1 : snapshot.activeStop;
   return (
     <div className="ski-overlay">
       <Hud snapshot={snapshot} stops={stops} jumps={jumps} onSelect={controller.goTo} />
       <TrickCallout snapshot={snapshot} jumps={jumps} />
-      <ArrivalBanner snapshot={snapshot} stops={stops} />
-      <StopCard snapshot={snapshot} stops={stops} jumps={jumps} controller={controller} />
+      {!onBoard && <ArrivalBanner snapshot={snapshot} stops={stops} />}
+      <StopCard snapshot={snapshot} activeStop={cardStop} course={course} controller={controller} />
+      {Object.entries(surfaceMounts).map(([key, mount]) => {
+        const index = Number(key);
+        const stop = stops[index];
+        return createPortal(
+          <div className="board" style={{ "--accent": accentFor(stop, index) }}>
+            <SurfaceContent
+              kind={surfaceKindFor(stop)}
+              stop={stop}
+              index={index}
+              active={snapshot.activeStop === index}
+              nextTrick={nextTrickAfter(course, index)}
+              onNext={controller.next}
+              onPrev={controller.prev}
+            />
+          </div>,
+          mount,
+          stop.id,
+        );
+      })}
       <div className="ski-pad" aria-label="Ride controls">
         <button type="button" className="ski-btn ski-btn--icon" onClick={controller.prev} aria-label="Previous checkpoint">
           ▲

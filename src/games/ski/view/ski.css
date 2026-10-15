@@ -1118,3 +1118,751 @@ html.ski-mode body {
     opacity: 0;
   }
 }
+
+/* ---------- Boards in the 3D world (CSS3D) ---------- */
+.ski__surfaces {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.ski-surface {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.board {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  font-family: var(--font-body, system-ui, sans-serif);
+  --ski-ink: #0b1030;
+  --ski-yellow: #ffd23f;
+  --ski-cyan: #5ef0ff;
+  --ski-green: #2bd9a0;
+  --ski-pixel: "Press Start 2P", ui-monospace, monospace;
+}
+
+/* Board-sized buttons (content is scaled down onto the screen). */
+.board-actions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 0 70px 50px;
+}
+
+.board .ski-btn {
+  min-height: 100px;
+  padding: 0 44px;
+  border-radius: 22px;
+  font-size: 26px;
+  gap: 10px;
+}
+
+.board .ski-btn--primary {
+  flex: 0 1 560px;
+}
+
+.board .ski-btn--ghost {
+  width: 100px;
+  flex: none;
+}
+
+.board .ski-btn__sub {
+  font-size: 15px;
+}
+
+.board-more {
+  margin-left: auto;
+  font-size: 26px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.ski-surface.is-active .board-in,
+.ski-surface.is-active .sw__lead > *,
+.ski-surface.is-active .sw__info,
+.ski-surface.is-active .tm__legend > * {
+  animation: board-rise 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.1) both;
+}
+
+.ski-surface.is-active .sw__lead > :nth-child(2),
+.ski-surface.is-active .tm__legend > :nth-child(2) {
+  animation-delay: 0.08s;
+}
+
+.ski-surface.is-active .sw__lead > :nth-child(3),
+.ski-surface.is-active .tm__legend > :nth-child(3) {
+  animation-delay: 0.16s;
+}
+
+.ski-surface.is-active .sw__lead > :nth-child(4),
+.ski-surface.is-active .tm__legend > :nth-child(4) {
+  animation-delay: 0.24s;
+}
+
+.ski-surface.is-active .sw__info,
+.ski-surface.is-active .tm__legend > :nth-child(5) {
+  animation-delay: 0.34s;
+}
+
+.ski-surface.is-active .tm__legend > :nth-child(6) {
+  animation-delay: 0.44s;
+}
+
+@keyframes board-rise {
+  from {
+    opacity: 0.15;
+    transform: translateY(18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ----- Chapter 1: enamel lift sign on the station wall ----- */
+.sw {
+  height: 100%;
+  color: #eef1ff;
+  background:
+    radial-gradient(circle at 18% 0%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 45%),
+    radial-gradient(circle at 100% 100%, rgba(94, 240, 255, 0.08), transparent 40%),
+    linear-gradient(170deg, #18205a, #0b1030 70%);
+  box-shadow: inset 0 0 0 14px #0b1030, inset 0 0 0 18px rgba(255, 246, 208, 0.75);
+}
+
+.sw::before,
+.sw::after {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  top: 34px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff, #8a8f9c 60%);
+  box-shadow: 0 914px 0 #8a8f9c;
+}
+
+.sw::before {
+  left: 34px;
+}
+
+.sw::after {
+  right: 34px;
+}
+
+.sw__band {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  height: 140px;
+  margin: 18px 18px 0;
+  padding: 0 52px;
+  color: var(--ski-ink);
+  background:
+    repeating-linear-gradient(-45deg, rgba(11, 16, 48, 0.08) 0 18px, transparent 18px 36px),
+    var(--accent);
+  background-size: 51px 51px, auto;
+  animation: sw-stripes 3s linear infinite;
+}
+
+@keyframes sw-stripes {
+  to {
+    background-position: 51px 0, 0 0;
+  }
+}
+
+.sw__chair {
+  padding: 16px 22px;
+  font-family: var(--ski-pixel);
+  font-size: 22px;
+  color: var(--accent);
+  background: var(--ski-ink);
+  border-radius: 12px;
+}
+
+.sw__name {
+  flex: 1;
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-size: 64px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+.sw__status {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 22px;
+  font-family: var(--ski-pixel);
+  font-size: 20px;
+  text-transform: uppercase;
+  background: rgba(255, 255, 255, 0.55);
+  border-radius: 999px;
+}
+
+.sw__status i {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #1aa36f;
+  box-shadow: 0 0 14px #1aa36f;
+  animation: ski-blink 1.2s steps(2) infinite;
+}
+
+.sw__body {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 64px;
+  padding: 52px 76px 0;
+}
+
+.sw__era {
+  margin-bottom: 20px;
+  font-family: var(--ski-pixel);
+  font-size: 20px;
+  line-height: 1.6;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+.sw__title {
+  margin-bottom: 22px;
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-size: 96px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: #fff;
+}
+
+.sw__headline {
+  margin-bottom: 24px;
+  padding-left: 24px;
+  border-left: 8px solid var(--accent);
+  font-size: 38px;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #d8deff;
+}
+
+.sw__summary {
+  font-size: 29px;
+  line-height: 1.5;
+  color: #a9b2d6;
+}
+
+.sw__info {
+  align-self: start;
+  padding: 36px 40px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 3px solid rgba(255, 255, 255, 0.14);
+  border-radius: 28px;
+}
+
+.sw__infohead {
+  margin-bottom: 18px;
+  padding-bottom: 18px;
+  font-family: var(--ski-pixel);
+  font-size: 22px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  color: var(--ski-yellow);
+  text-transform: uppercase;
+  border-bottom: 4px dashed rgba(255, 255, 255, 0.18);
+}
+
+.sw__stats {
+  margin: 0 0 30px;
+}
+
+.sw__stats div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 14px 0;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+}
+
+.sw__stats dt {
+  font-size: 26px;
+  color: #9aa3c7;
+}
+
+.sw__stats dd {
+  margin: 0;
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-size: 54px;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.sw__rule {
+  display: flex;
+  gap: 26px;
+  align-items: flex-start;
+}
+
+.sw__diamond {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin: 10px;
+  background: var(--ski-yellow);
+  border: 5px solid var(--ski-ink);
+  box-shadow: 0 0 0 4px var(--ski-yellow);
+  transform: rotate(45deg);
+}
+
+.sw__diamond b {
+  font-family: var(--ski-pixel);
+  font-size: 24px;
+  color: var(--ski-ink);
+  transform: rotate(-45deg);
+}
+
+.sw__rule strong {
+  display: block;
+  margin-bottom: 8px;
+  font-family: var(--ski-pixel);
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--ski-yellow);
+  text-transform: uppercase;
+}
+
+.sw__rule p {
+  font-size: 30px;
+  line-height: 1.4;
+  color: #fff;
+}
+
+.sw .board-more {
+  color: #9aa3c7;
+}
+
+/* ----- Chapter 2: trail map at the top of the lift ----- */
+.tm {
+  height: 100%;
+  color: var(--ski-ink);
+  background:
+    radial-gradient(circle at 80% 0%, rgba(255, 210, 63, 0.18), transparent 40%),
+    #f7f2e4;
+  box-shadow: inset 0 0 0 10px #f7f2e4, inset 0 0 0 14px rgba(11, 16, 48, 0.75);
+}
+
+.tm__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 120px;
+  padding: 0 60px;
+  margin: 14px 14px 0;
+  color: #fff;
+  background: linear-gradient(90deg, #0b1030, #1f2b6e);
+}
+
+.tm__resort {
+  display: block;
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-size: 54px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+.tm__sub {
+  font-family: var(--ski-pixel);
+  font-size: 16px;
+  color: var(--ski-yellow);
+  text-transform: uppercase;
+}
+
+.tm__compass {
+  display: grid;
+  place-items: center;
+  width: 78px;
+  height: 78px;
+  font-family: var(--ski-pixel);
+  font-size: 22px;
+  border: 4px solid #fff;
+  border-radius: 50%;
+  background: conic-gradient(from -20deg, #ff4d4d 0 40deg, transparent 40deg 360deg);
+  animation: tm-spin 12s ease-in-out infinite alternate;
+}
+
+@keyframes tm-spin {
+  to {
+    transform: rotate(18deg);
+  }
+}
+
+.tm__body {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 52px;
+  padding: 36px 60px 0;
+}
+
+.tm__map {
+  margin: 0;
+}
+
+.tm-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 5px solid var(--ski-ink);
+  border-radius: 18px;
+  background: #eef6ff;
+}
+
+.tm__key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 26px;
+  margin-top: 16px;
+  font-size: 20px;
+  color: #3b4060;
+}
+
+.tm__key b {
+  margin-right: 8px;
+}
+
+.tm-key--green,
+.tm-label__sym--green {
+  color: #18a46b;
+  fill: #18a46b;
+}
+
+.tm-key--blue,
+.tm-label__sym--blue {
+  color: #3a63d8;
+  fill: #3a63d8;
+}
+
+.tm-key--black,
+.tm-label__sym--black {
+  color: #0b1030;
+  fill: #0b1030;
+}
+
+.tm-lift {
+  fill: none;
+  stroke: #0b1030;
+  stroke-width: 3;
+  stroke-dasharray: 10 8;
+  animation: tm-cable 1.4s linear infinite;
+}
+
+@keyframes tm-cable {
+  to {
+    stroke-dashoffset: -36;
+  }
+}
+
+.tm-trail path {
+  fill: none;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+
+.tm-trail__halo {
+  stroke: #fff;
+  stroke-width: 13;
+}
+
+.tm-trail__line {
+  stroke-width: 6;
+}
+
+.tm-trail--green .tm-trail__line {
+  stroke: #18a46b;
+}
+
+.tm-trail--blue .tm-trail__line {
+  stroke: #3a63d8;
+}
+
+.tm-trail--black .tm-trail__line {
+  stroke: #0b1030;
+}
+
+.ski-surface.is-active .tm-trail path {
+  animation: tm-draw 1.3s cubic-bezier(0.4, 0, 0.2, 1) both;
+  animation-delay: calc(var(--t) * 0.22s + 0.2s);
+}
+
+@keyframes tm-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.tm-label rect {
+  fill: #fff;
+  stroke: #0b1030;
+  stroke-width: 2.5;
+}
+
+.tm-label text {
+  font-family: var(--font-body, system-ui, sans-serif);
+  font-size: 15px;
+  font-weight: 700;
+  fill: #0b1030;
+}
+
+.ski-surface.is-active .tm-label {
+  animation: tm-pop 0.5s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+  animation-delay: calc(var(--t) * 0.22s + 0.9s);
+  transform-box: fill-box;
+}
+
+@keyframes tm-pop {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.tm-here path {
+  fill: #ff4d4d;
+  stroke: #fff;
+  stroke-width: 2.5;
+}
+
+.tm-here__pulse {
+  fill: none;
+  stroke: #ff4d4d;
+  stroke-width: 3;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: tm-pulse 1.6s ease-out infinite;
+}
+
+@keyframes tm-pulse {
+  from {
+    opacity: 0.9;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.8);
+  }
+}
+
+.tm-here text {
+  font-family: var(--font-body, system-ui, sans-serif);
+  font-size: 17px;
+  font-weight: 800;
+  fill: #ff4d4d;
+  stroke: #fff;
+  stroke-width: 4px;
+  paint-order: stroke;
+}
+
+.tm__era {
+  margin-bottom: 14px;
+  font-family: var(--ski-pixel);
+  font-size: 18px;
+  color: #3a63d8;
+  text-transform: uppercase;
+}
+
+.tm__title {
+  margin-bottom: 18px;
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-size: 74px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.tm__headline {
+  margin-bottom: 18px;
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.tm__summary {
+  margin-bottom: 22px;
+  font-size: 25px;
+  line-height: 1.5;
+  color: #4a5070;
+}
+
+.tm__stats {
+  display: flex;
+  gap: 16px;
+  margin: 0 0 22px;
+  padding: 0;
+  list-style: none;
+}
+
+.tm__stats li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 20px;
+  background: #fff;
+  border: 3px solid var(--ski-ink);
+  border-radius: 16px;
+  box-shadow: 0 5px 0 var(--ski-ink);
+}
+
+.tm__stats strong {
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-size: 34px;
+  color: #3a63d8;
+}
+
+.tm__stats span {
+  font-size: 18px;
+  color: #5b6178;
+}
+
+.tm__tip {
+  padding: 20px 24px;
+  font-size: 26px;
+  line-height: 1.4;
+  background: var(--ski-yellow);
+  border: 3px solid var(--ski-ink);
+  border-radius: 16px;
+}
+
+.tm__tip span {
+  display: block;
+  margin-bottom: 8px;
+  font-family: var(--ski-pixel);
+  font-size: 16px;
+  text-transform: uppercase;
+}
+
+.tm .ski-btn--ghost {
+  color: var(--ski-ink);
+  background: #fff;
+  box-shadow:
+    inset 0 0 0 3px var(--ski-ink),
+    0 5px 0 var(--ski-ink);
+}
+
+.tm .board-more {
+  color: #3a63d8;
+}
+
+/* ----- Portrait phones: stacked boards ----- */
+.ski-surface.is-portrait .sw__band {
+  gap: 16px;
+  height: 104px;
+  padding: 0 28px;
+}
+
+.ski-surface.is-portrait .sw__name {
+  font-size: 34px;
+}
+
+.ski-surface.is-portrait .sw__chair,
+.ski-surface.is-portrait .sw__status {
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+.ski-surface.is-portrait .sw__body,
+.ski-surface.is-portrait .tm__body {
+  grid-template-columns: 1fr;
+  gap: 26px;
+  padding: 30px 40px 0;
+}
+
+.ski-surface.is-portrait .sw__title {
+  font-size: 60px;
+}
+
+.ski-surface.is-portrait .sw__headline,
+.ski-surface.is-portrait .tm__headline {
+  font-size: 30px;
+}
+
+.ski-surface.is-portrait .sw__summary,
+.ski-surface.is-portrait .tm__summary,
+.ski-surface.is-portrait .tm__stats,
+.ski-surface.is-portrait .tm__key,
+.ski-surface.is-portrait .board-more,
+.ski-surface.is-portrait .tm__compass {
+  display: none;
+}
+
+.ski-surface.is-portrait .sw__info {
+  padding: 24px 28px;
+}
+
+.ski-surface.is-portrait .sw__stats {
+  margin-bottom: 18px;
+}
+
+.ski-surface.is-portrait .sw__stats dd {
+  font-size: 40px;
+}
+
+.ski-surface.is-portrait .sw__rule p,
+.ski-surface.is-portrait .tm__tip {
+  font-size: 24px;
+}
+
+.ski-surface.is-portrait .tm__head {
+  height: 96px;
+  padding: 0 32px;
+}
+
+.ski-surface.is-portrait .tm__resort {
+  font-size: 38px;
+}
+
+.ski-surface.is-portrait .tm__sub {
+  font-size: 12px;
+}
+
+.ski-surface.is-portrait .tm__title {
+  font-size: 54px;
+}
+
+.ski-surface.is-portrait .board-actions {
+  padding: 0 40px 40px;
+}
+
+.ski-surface.is-portrait .board .ski-btn {
+  padding: 0 24px;
+  font-size: 22px;
+}
+
+.ski-surface.is-portrait .board .ski-btn--primary {
+  flex: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ski-surface .board *,
+  .ski-surface .board *::before,
+  .ski-surface .board *::after {
+    animation: none !important;
+  }
+}

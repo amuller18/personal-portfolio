@@ -41,6 +41,8 @@ export const chapters = [
         "Scripts could.",
     ],
     lesson: "Automation is leverage. One script can out-work a room of people.",
+    // Ski mode: chapter one is painted on a chairlift station.
+    ski: { liftName: "Hustle Express" },
     stats: [
       { value: "$10K+", label: "revenue in high school" },
       { value: "Python", label: "+ Selenium bots" },
@@ -61,6 +63,17 @@ export const chapters = [
         "No labels, no ground truth, just tuning until the clusters got pure.",
     ],
     lesson: "Unstructured data has structure. You just have to go find it.",
+    // Ski mode: the Wisepal pipeline, drawn as the runs on a trail map.
+    ski: {
+      mapName: "Tel Aviv Ridge",
+      trails: [
+        { name: "Inbox Bowl", level: "green", note: "Raw consumer email" },
+        { name: "Embedding Glades", level: "blue", note: "Word-embedding vectors" },
+        { name: "K-Means Cruiser", level: "blue", note: "First-pass clusters" },
+        { name: "HDBSCAN Chute", level: "black", note: "Density clusters, noise out" },
+        { name: "Offer Engine", level: "green", note: "Cheaper plans, recommended" },
+      ],
+    },
     stats: [
       { value: "k-means", label: "+ HDBSCAN clustering" },
       { value: "0", label: "labels to start from" },

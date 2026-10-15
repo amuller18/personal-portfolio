@@ -19,11 +19,11 @@ import SkiRenderer3D from "./view/three/SkiRenderer3D";
 import "./view/ski.css";
 
 /* Views are interchangeable: both read the same model frames. */
-function createRenderer(canvas, course) {
+function createRenderer(canvas, course, surfaceLayer) {
   const wants2d = new URLSearchParams(window.location.search).get("view") === "2d";
   if (!wants2d) {
     try {
-      return new SkiRenderer3D(canvas, course);
+      return new SkiRenderer3D(canvas, course, { surfaceLayer });
     } catch (error) {
       // No WebGL context was created, so the same canvas can still go 2D.
       return new SkiRenderer(canvas, course);
@@ -43,6 +43,8 @@ export default function SkiGame() {
   const [{ course, controller }] = useState(createGame);
   const trackRef = useRef(null);
   const canvasRef = useRef(null);
+  const surfaceLayerRef = useRef(null);
+  const [surfaceMounts, setSurfaceMounts] = useState({});
   const reducedMotion = usePrefersReducedMotion();
   const snapshot = useSyncExternalStore(controller.subscribe, controller.getSnapshot);
 
@@ -51,9 +53,11 @@ export default function SkiGame() {
     const previousTitle = document.title;
     root.classList.add("ski-mode");
     document.title = "Alex Muller · Ski the story";
-    const renderer = createRenderer(canvasRef.current, course);
+    const renderer = createRenderer(canvasRef.current, course, surfaceLayerRef.current);
+    setSurfaceMounts({ ...(renderer.surfaceMounts || {}) });
     controller.attach({ track: trackRef.current, renderer });
     return () => {
+      setSurfaceMounts({});
       controller.detach();
       root.classList.remove("ski-mode");
       document.title = previousTitle;
@@ -68,7 +72,8 @@ export default function SkiGame() {
     <div className="ski" ref={trackRef}>
       <div className="ski__stage">
         <canvas ref={canvasRef} className="ski__canvas" aria-hidden="true" />
-        <SkiOverlay snapshot={snapshot} course={course} controller={controller} />
+        <div ref={surfaceLayerRef} className="ski__surfaces" />
+        <SkiOverlay snapshot={snapshot} course={course} controller={controller} surfaceMounts={surfaceMounts} />
       </div>
     </div>
   );

@@ -8,7 +8,6 @@
  *   getSnapshot()  coarse, quantized state for the React HUD
  */
 import { clamp } from "../../shared/math";
-import { TOUCHDOWN } from "./course";
 
 const ACCEL = 1.5; // stops / s^2
 const CRUISE = 0.5; // stops / s, before catching up on long scrolls
@@ -31,6 +30,14 @@ export default class SkiModel {
     this.skier = course.poseAt(0);
     this.frame = this.buildFrame();
     this.snapshot = this.buildSnapshot();
+  }
+
+  /* The run the skier is in, or about to enter when sitting on a stop. */
+  runAt(progress, direction = 1) {
+    const last = this.lastStop - 1;
+    const base = Math.floor(progress);
+    const index = progress === base && direction < 0 ? base - 1 : base;
+    return this.course.runs[clamp(index, 0, last)];
   }
 
   get lastStop() {
@@ -62,7 +69,10 @@ export default class SkiModel {
       this.velocity = 0;
     } else {
       const gap = this.target - this.progress;
-      const cruise = Math.max(CRUISE, Math.abs(gap) * 0.9);
+      // Lift runs scroll slower so the ride up has time to breathe.
+      const runPace = this.runAt(this.progress, gap).pace;
+      // Catch up only when more than one stop behind (long scrolls, warps).
+      const cruise = CRUISE * runPace + Math.max(0, Math.abs(gap) - 1) * 0.9;
       const desired = Math.sign(gap) * Math.min(cruise, Math.sqrt(2 * ACCEL * Math.abs(gap)));
       const maxChange = ACCEL * 1.6 * dt;
       this.velocity += clamp(desired - this.velocity, -maxChange, maxChange);
@@ -101,13 +111,13 @@ export default class SkiModel {
 
   score() {
     return this.course.jumps.reduce(
-      (total, jump) => (this.maxProgress >= jump.index + TOUCHDOWN ? total + jump.trick.points : total),
+      (total, jump) => (this.maxProgress >= jump.run + jump.touchdown ? total + jump.trick.points : total),
       0,
     );
   }
 
   landedCount() {
-    return this.course.jumps.filter((jump) => this.maxProgress >= jump.index + TOUCHDOWN).length;
+    return this.course.jumps.filter((jump) => this.maxProgress >= jump.run + jump.touchdown).length;
   }
 
   buildSnapshot() {
@@ -119,10 +129,11 @@ export default class SkiModel {
 
     const run = Math.min(Math.floor(this.progress), this.lastStop - 1);
     const f = this.progress - run;
-    const trick = this.skier.airborne ? this.skier.run : -1;
+    const { jump } = this.course.runs[run];
+    const trick = this.skier.airborne ? this.skier.jump.index : -1;
     const landed =
-      !this.skier.airborne && this.velocity > 0 && f >= TOUCHDOWN && f < TOUCHDOWN + LANDED_WINDOW
-        ? run
+      jump && !this.skier.airborne && this.velocity > 0 && f >= jump.touchdown && f < jump.touchdown + LANDED_WINDOW
+        ? jump.index
         : -1;
     const rewinding = this.velocity < -0.08;
     const score = this.score();

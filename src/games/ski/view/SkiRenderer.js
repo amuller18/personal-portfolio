@@ -6,7 +6,7 @@
  * the per-frame cost low. Visual-only effects (snow spray, confetti, shake,
  * snowfall) live here because they have no bearing on game state.
  */
-import { KICKER, LANDING } from "../model/course";
+import { KICKER, LIFT } from "../model/course";
 import { clamp, clamp01, lerp, mixColor, seededRandom, smoothRange } from "../../shared/math";
 import drawSkier from "./drawSkier";
 import { GATE_COLORS } from "./palette";
@@ -150,6 +150,7 @@ export default class SkiRenderer {
     this.drawTerrain();
     this.drawJumps(frame);
     this.drawTracks(skier);
+    this.drawLifts(frame);
     this.drawLandmarks(frame);
     this.drawShadow(skier);
     this.updateParticles(dt);
@@ -520,9 +521,7 @@ export default class SkiRenderer {
     ctx.beginPath();
     let drawing = false;
     for (let x = left; x <= right; x += 3) {
-      const u = x / course.runLength - Math.floor(x / course.runLength);
-      const inAir = x < course.finishX && u > KICKER.lip - 0.002 && u < LANDING;
-      if (inAir) {
+      if (!course.isSkied(x)) {
         drawing = false;
       } else {
         const y = this.sy(course.groundY(x) + 2.5);
@@ -534,6 +533,48 @@ export default class SkiRenderer {
     ctx.strokeStyle = "rgba(150, 175, 215, 0.8)";
     ctx.lineWidth = 1;
     ctx.stroke();
+  }
+
+  /* Chairlifts: cable, towers, a few looping chairs and the rider's chair. */
+  drawLifts(frame) {
+    const { ctx, course } = this;
+    const z = this.camera.zoom;
+    const left = this.worldLeft(80);
+    const right = this.worldRight(80);
+    const drawChair = (x, y) => {
+      const sx = this.sx(x);
+      const sy = this.sy(y);
+      ctx.fillStyle = "#2b3550";
+      ctx.fillRect(Math.round(sx), Math.round(sy - (LIFT.hanger + 7) * z), Math.max(1, Math.round(z)), Math.round((LIFT.hanger + 7) * z));
+      ctx.fillStyle = "#3a63d8";
+      ctx.fillRect(Math.round(sx - 9 * z), Math.round(sy - 7 * z), Math.round(20 * z), Math.max(1, Math.round(3 * z)));
+      ctx.fillRect(Math.round(sx - 10 * z), Math.round(sy - 28 * z), Math.max(1, Math.round(3 * z)), Math.round(22 * z));
+    };
+    course.lifts.forEach((lift) => {
+      if (lift.unloadX < left || lift.loadX > right) return;
+      ctx.beginPath();
+      for (let i = 0; i <= 40; i += 1) {
+        const seat = lift.seatAt(i / 40);
+        const y = this.sy(seat.y - LIFT.hanger - 7);
+        if (i === 0) ctx.moveTo(this.sx(seat.x), y);
+        else ctx.lineTo(this.sx(seat.x), y);
+      }
+      ctx.strokeStyle = "#1b2236";
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      [0.2, 0.4, 0.6, 0.8].forEach((t) => {
+        const seat = lift.seatAt(t);
+        const top = seat.y - LIFT.hanger - 12;
+        ctx.fillStyle = "#2b3550";
+        ctx.fillRect(Math.round(this.sx(seat.x) - 2 * z), Math.round(this.sy(top)), Math.max(2, Math.round(4 * z)), Math.round((course.groundY(seat.x) - top) * z));
+      });
+      for (let i = 0; i < 6; i += 1) {
+        const s = (((frame.time * 0.07 + i / 6) % 1) + 1) % 1;
+        const seat = lift.seatAt(s);
+        drawChair(seat.x, seat.y);
+      }
+    });
+    if (frame.skier.lift) drawChair(frame.skier.lift.chairX, frame.skier.lift.chairY);
   }
 
   drawShadow(skier) {

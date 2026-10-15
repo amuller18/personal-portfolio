@@ -23,6 +23,7 @@ export function chapterStop(section) {
     bullets: (section.goals ?? []).map((goal) => goal.title),
     lesson: section.lesson ?? null,
     href: `/#${section.id}`,
+    ski: section.ski ?? {},
   };
 }
 

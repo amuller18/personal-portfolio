@@ -8,6 +8,7 @@
  *   cross     0..1 ski tips crossed (iron cross)
  *   grab      0..1 hand to ski
  *   arms      0..1 arms raised
+ *   sit       0..1 seated (chairlift); set by the course, not by tricks
  * Rotations must finish on whole turns so every landing is clean.
  */
 import { clamp01, smoothRange } from "../../shared/math";
@@ -20,6 +21,7 @@ export const REST_POSE = Object.freeze({
   cross: 0,
   grab: 0,
   arms: 0,
+  sit: 0,
 });
 
 /* 0 -> 1 -> 0: in over the first `edge` of the air, out over the last. */
