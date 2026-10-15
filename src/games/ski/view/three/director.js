@@ -23,7 +23,7 @@ import { clamp, clamp01 } from "../../../shared/math";
 
 const AIR_SHOTS = ["side", "orbit", "hero", "overhead"];
 const BOARD_FOV = 38;
-const BOARD_FILL = 0.9;
+const BOARD_FILL = 0.86;
 
 /* Damped spring on a number or a Vector3. */
 function springScalar(state, target, stiffness, damping, dt) {
@@ -102,15 +102,17 @@ export default class Director {
       target.fov = BOARD_FOV;
       target.stiffness = 5;
       target.ratio = 0.85;
-      target.frameY = -0.035;
+      target.frameY = -0.05;
       return "board";
     }
 
     if (idle) {
       const wide = nearest === 0 || nearest === lastStop;
-      const theta = (nearest === 0 ? 0.55 : 0.8) + 0.32 * Math.sin(time * 0.22 + nearest * 1.7);
+      // The intro is shot from the open side, with the lift house behind you.
+      const side = nearest === 0 ? -1 : 1;
+      const theta = (nearest === 0 ? 0.6 : 0.8) + 0.32 * Math.sin(time * 0.22 + nearest * 1.7);
       const radius = wide ? 400 : 300;
-      target.offset.set(Math.cos(theta) * radius, wide ? 120 : 85, Math.sin(theta) * radius);
+      target.offset.set(Math.cos(theta) * radius, wide ? 120 : 85, side * Math.sin(theta) * radius);
       target.look.set(0, 40, 0);
       target.stiffness = 6;
       target.frameX = narrow ? 0 : -0.15;
@@ -144,8 +146,10 @@ export default class Director {
         target.fov = 50;
         target.stiffness = 5;
         return "shuffle";
+      // Lift shots stay on the open (-z) side, the same side as the wall
+      // shot, so the camera never sweeps through the cables.
       case "load":
-        target.offset.set(-60, 70, 250);
+        target.offset.set(-60, 70, -250);
         target.look.set(30, 34, 0);
         target.fov = 46;
         return "load";
@@ -153,14 +157,14 @@ export default class Director {
         const s = skier.lift ? skier.lift.s : 0;
         if (s < 0.5) {
           // Over the shoulder, up the cable line toward the top.
-          target.offset.set(-150, 18, 80);
+          target.offset.set(-150, 18, -80);
           target.look.set(260, 110, 0);
           target.fov = 56;
           target.roll = 0.04;
           target.stiffness = 8;
           return "lift-up";
         }
-        target.offset.set(40, 50, 320);
+        target.offset.set(40, 50, -320);
         target.look.set(0, 0, 0);
         target.fov = 48;
         target.stiffness = 5;

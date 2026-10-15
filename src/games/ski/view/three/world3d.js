@@ -184,7 +184,7 @@ export function buildWorld(course) {
     const sx = stopXs[index];
     if (kind === "station") {
       // Lift house to the right of the lift line (+z), its wall facing the queue.
-      placements.push({ index, kind, stop, cx: sx + 300, faceZ: 300, facing: -1 });
+      placements.push({ index, kind, stop, cx: sx - 120, faceZ: 300, facing: -1 });
     } else {
       // Trail map on the left, just past the stop.
       placements.push({ index, kind, stop, cx: sx + 40 + SURFACE_MAX_WIDTH / 2, faceZ: BOARD_Z, facing: 1 });
@@ -402,7 +402,7 @@ export function buildWorld(course) {
   if (queueX) {
     const sx = stopXs[queueX.index];
     const ropeMaterial = keep(new THREE.LineBasicMaterial({ color: "#ff4d4d" }));
-    [-26, 26].forEach((z) => {
+    [-80, -26, 26].forEach((z) => {
       const points = [];
       for (let x = sx - 200; x <= sx + 40; x += 40) {
         const ground = heightAt(x, z);
@@ -412,7 +412,8 @@ export function buildWorld(course) {
       }
       group.add(new THREE.Line(keep(new THREE.BufferGeometry().setFromPoints(points)), ropeMaterial));
     });
-    queueStops.push({ x: sx - 52, z: 3 }, { x: sx - 104, z: -4 }, { x: sx - 150, z: 2 });
+    // Other skiers wait in the next lane over, so the walk-in stays clear.
+    queueStops.push({ x: sx + 20, z: -53 }, { x: sx - 30, z: -55 }, { x: sx - 82, z: -51 });
   }
 
   // Base lodge.
