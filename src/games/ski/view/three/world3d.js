@@ -24,6 +24,7 @@ const noise = (x, z) =>
   0.5 * Math.sin(x * 0.019 - z * 0.017);
 
 const IDENTITY = new THREE.Quaternion();
+const HIDDEN_SCALE = new THREE.Vector3(0.0001, 0.0001, 0.0001);
 
 function paint(geometry, color) {
   const c = new THREE.Color(color);
@@ -494,7 +495,9 @@ export function buildWorld(course) {
         const seatPoint = lift.seatAt(up ? p * 2 : 1 - (p - 0.5) * 2);
         chairPos.set(seatPoint.x, -seatPoint.y, up ? 0 : DOWN_LINE_Z);
         chairQuat.copy(up ? IDENTITY : downTurn);
-        chairMatrix.compose(chairPos, chairQuat, chairScale);
+        // Leave a gap on the up line around the rider's own chair.
+        const crowding = up && skier.lift && Math.abs(seatPoint.x - skier.lift.chairX) < 90;
+        chairMatrix.compose(chairPos, chairQuat, crowding ? HIDDEN_SCALE : chairScale);
         loopChairs.setMatrixAt(li * CHAIRS_PER_LIFT + i, chairMatrix);
       }
     });
