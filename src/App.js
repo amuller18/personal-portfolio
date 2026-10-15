@@ -6,6 +6,7 @@ import Home from "./Pages/Home/Homescreen";
 
 /* Game modes are full-screen and load on demand. */
 const SkiGame = lazy(() => import("./games/ski/SkiGame"));
+const ClimbGame = lazy(() => import("./games/climb/ClimbGame"));
 
 function NotFound() {
   return (
@@ -37,6 +38,14 @@ function App() {
           element={
             <Suspense fallback={<div className="game-loading">Loading the lift…</div>}>
               <SkiGame />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/climb"
+          element={
+            <Suspense fallback={<div className="game-loading">Racking up…</div>}>
+              <ClimbGame />
             </Suspense>
           }
         />

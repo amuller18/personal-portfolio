@@ -1,0 +1,1038 @@
+/* ---------- Climb mode ---------- */
+html.climb-mode {
+  scroll-behavior: auto;
+  scroll-padding-top: 0;
+}
+
+html.climb-mode body {
+  background: #2a1a12;
+}
+
+.climb {
+  --climb-ink: #2a1a12;
+  --climb-paper: #fbf4e6;
+  --climb-paper-2: #f3e6cc;
+  --climb-sand: #d58a52;
+  --climb-rust: #b5562f;
+  --climb-yellow: #ffd23f;
+  --climb-rope: #e8467c;
+  --climb-green: #2bd9a0;
+  --climb-pixel: "Press Start 2P", ui-monospace, monospace;
+  position: relative;
+  min-height: 100vh;
+  background: var(--climb-ink);
+  color: var(--climb-ink);
+}
+
+.climb__stage {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  background: linear-gradient(180deg, #2f7fd6, #d7ecff 60%, #d58a52 60%);
+}
+
+.climb__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.climb-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.climb-overlay > * {
+  pointer-events: auto;
+}
+
+.climb-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ---------- HUD ---------- */
+.climb-hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  padding: 14px clamp(12px, 3vw, 28px);
+  font-family: var(--climb-pixel);
+  color: #fff;
+  pointer-events: none;
+}
+
+.climb-hud > * {
+  pointer-events: auto;
+}
+
+.climb-hud__group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.climb-hud__group--right {
+  justify-content: flex-end;
+}
+
+.climb-hud__home {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  color: var(--climb-ink);
+  background: var(--climb-paper);
+  border-radius: 10px;
+  box-shadow: 0 4px 0 rgba(42, 26, 18, 0.45);
+  font-size: 18px;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.climb-hud__home:focus-visible {
+  outline: 3px solid var(--climb-yellow);
+  outline-offset: 3px;
+}
+
+.climb-hud__stat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  padding: 8px 10px;
+  background: rgba(42, 26, 18, 0.72);
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+}
+
+.climb-hud__label {
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  color: var(--climb-yellow);
+  text-transform: uppercase;
+}
+
+.climb-hud__value {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.climb-hud__pitch {
+  padding: 10px 14px;
+  font-size: 12px;
+  white-space: nowrap;
+  background: rgba(42, 26, 18, 0.72);
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+}
+
+.climb-hud__grade {
+  margin-left: 6px;
+  color: var(--climb-yellow);
+}
+
+/* ---------- Topo rail ---------- */
+.climb-topo {
+  position: absolute;
+  top: 96px;
+  bottom: 40px;
+  left: clamp(14px, 2.4vw, 30px);
+  width: 18px;
+}
+
+.climb-topo__track {
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 50%;
+  width: 6px;
+  margin-left: -3px;
+  background: rgba(42, 26, 18, 0.55);
+  border-radius: 3px;
+}
+
+.climb-topo__fill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(0deg, var(--climb-rope), var(--climb-yellow));
+  border-radius: 3px;
+  transform-origin: bottom;
+}
+
+.climb-topo__pip {
+  position: absolute;
+  left: 50%;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 3px solid var(--climb-ink);
+  border-radius: 50%;
+  background: var(--climb-paper);
+  transform: translate(-50%, 50%);
+  cursor: pointer;
+  transition:
+    transform 0.15s,
+    background 0.2s;
+}
+
+.climb-topo__pip.is-done {
+  background: var(--accent);
+}
+
+.climb-topo__pip--finish {
+  border-radius: 3px;
+}
+
+.climb-topo__pip.is-current {
+  transform: translate(-50%, 50%) scale(1.4);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.85);
+}
+
+.climb-topo__pip:hover,
+.climb-topo__pip:focus-visible {
+  transform: translate(-50%, 50%) scale(1.5);
+  outline: none;
+}
+
+.climb-topo__tip {
+  position: absolute;
+  top: 50%;
+  left: calc(100% + 10px);
+  padding: 6px 8px;
+  font-family: var(--climb-pixel);
+  font-size: 8px;
+  line-height: 1.3;
+  color: #fff;
+  white-space: nowrap;
+  background: var(--climb-ink);
+  border-radius: 6px;
+  opacity: 0;
+  transform: translate(-4px, -50%);
+  transition:
+    opacity 0.15s,
+    transform 0.15s;
+  pointer-events: none;
+}
+
+.climb-topo__pip:hover .climb-topo__tip,
+.climb-topo__pip:focus-visible .climb-topo__tip {
+  opacity: 1;
+  transform: translate(0, -50%);
+}
+
+/* ---------- Callouts ---------- */
+.climb-callout {
+  position: absolute;
+  top: 20%;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--climb-pixel);
+  text-align: center;
+  white-space: nowrap;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.climb-callout__name {
+  font-size: clamp(18px, 4vw, 40px);
+  color: var(--climb-yellow);
+  text-transform: uppercase;
+  text-shadow:
+    3px 0 0 var(--climb-ink),
+    -3px 0 0 var(--climb-ink),
+    0 3px 0 var(--climb-ink),
+    0 -3px 0 var(--climb-ink),
+    6px 6px 0 var(--climb-rope);
+  animation:
+    climb-pop 0.45s cubic-bezier(0.2, 1.6, 0.4, 1) both,
+    climb-wobble 0.6s 0.45s ease-in-out infinite alternate;
+}
+
+.climb-callout--fall .climb-callout__name {
+  color: #fff;
+  text-shadow:
+    3px 0 0 var(--climb-ink),
+    -3px 0 0 var(--climb-ink),
+    0 3px 0 var(--climb-ink),
+    0 -3px 0 var(--climb-ink),
+    6px 6px 0 #ff4d4d;
+  animation:
+    climb-pop 0.35s cubic-bezier(0.2, 1.6, 0.4, 1) both,
+    climb-shake 0.12s 0.35s linear infinite;
+}
+
+.climb-callout__points {
+  font-size: clamp(22px, 4.5vw, 44px);
+  color: var(--climb-green);
+  text-shadow:
+    3px 0 0 var(--climb-ink),
+    -3px 0 0 var(--climb-ink),
+    0 3px 0 var(--climb-ink),
+    0 -3px 0 var(--climb-ink),
+    6px 6px 0 var(--climb-ink);
+  animation: climb-pop 0.4s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+
+.climb-callout__note {
+  padding: 8px 12px;
+  font-size: 10px;
+  color: #fff;
+  text-transform: uppercase;
+  background: var(--climb-ink);
+  border-radius: 6px;
+  animation: climb-pop 0.35s 0.1s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+
+.climb-callout--rewind .climb-callout__note {
+  color: var(--climb-yellow);
+  animation: climb-blink 0.6s steps(2) infinite;
+}
+
+/* ---------- Guidebook cards ---------- */
+.climb-card {
+  position: absolute;
+  top: 50%;
+  right: clamp(16px, 4vw, 56px);
+  width: min(460px, 40vw);
+  max-height: calc(100% - 170px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(42, 26, 18, 0.3) transparent;
+  padding: 26px 26px 20px;
+  color: var(--climb-ink);
+  background: radial-gradient(circle at 100% 0, color-mix(in srgb, var(--accent) 26%, transparent), transparent 50%),
+    repeating-linear-gradient(0deg, transparent 0 27px, rgba(181, 86, 47, 0.07) 27px 28px), var(--climb-paper);
+  border-radius: 18px;
+  box-shadow:
+    0 0 0 3px var(--climb-ink),
+    10px 10px 0 3px rgba(42, 26, 18, 0.35),
+    0 30px 70px -24px rgba(42, 26, 18, 0.7);
+  font-family: var(--font-body, system-ui, sans-serif);
+  font-size: 15px;
+  line-height: 1.55;
+  transform: translateY(-50%);
+  animation: climb-card-in 0.55s cubic-bezier(0.2, 1.1, 0.3, 1) both;
+}
+
+.climb-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 22px;
+  right: 22px;
+  height: 5px;
+  border-radius: 0 0 4px 4px;
+  background: var(--accent);
+}
+
+.climb-card.is-leaving {
+  pointer-events: none;
+  animation: climb-card-out 0.28s ease-in both;
+}
+
+.climb-card--start {
+  width: min(500px, 42vw);
+}
+
+.climb-in {
+  animation: climb-rise 0.55s cubic-bezier(0.2, 0.9, 0.3, 1.15) both;
+  animation-delay: calc(var(--i, 0) * 70ms + 140ms);
+}
+
+.climb-card__head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.climb-card__num {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  font-family: var(--climb-pixel);
+  font-size: 22px;
+  color: var(--climb-ink);
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 3px var(--climb-ink),
+    4px 4px 0 3px rgba(42, 26, 18, 0.3);
+}
+
+.climb-card__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.climb-card__kicker {
+  margin: 0;
+  font-family: var(--climb-pixel);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  color: var(--climb-rust);
+  text-transform: uppercase;
+}
+
+.climb-card__route {
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-size: 15px;
+  font-weight: 700;
+  font-style: italic;
+}
+
+.climb-card__era {
+  font-size: 12px;
+  color: rgba(42, 26, 18, 0.65);
+}
+
+.climb-card__title {
+  margin: 18px 0 8px;
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-size: clamp(24px, 2.4vw, 32px);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+.climb-card__headline {
+  margin: 0 0 10px;
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.climb-card__body {
+  margin: 0 0 14px;
+  color: rgba(42, 26, 18, 0.82);
+}
+
+.climb-card__beta {
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  font-size: 13px;
+  font-style: italic;
+  background: var(--climb-paper-2);
+  border-left: 4px solid var(--accent);
+  border-radius: 6px;
+}
+
+.climb-card__roles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 14px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.climb-card__roles li {
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--climb-paper-2);
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1px rgba(42, 26, 18, 0.2);
+}
+
+.climb-card__more {
+  display: inline-block;
+  margin-top: 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--climb-rust);
+}
+
+.climb-card__actions {
+  position: sticky;
+  bottom: -20px;
+  display: flex;
+  gap: 10px;
+  margin: 18px -26px 0;
+  padding: 14px 26px 20px;
+  background: linear-gradient(180deg, transparent, var(--climb-paper) 30%);
+}
+
+.climb-card__actions .climb-btn--primary {
+  flex: 1;
+}
+
+.climb-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 6px;
+  vertical-align: 1px;
+  background: var(--climb-green);
+  border-radius: 50%;
+  animation: climb-blink 1.2s steps(2) infinite;
+}
+
+.climb-dot--gold {
+  background: var(--climb-yellow);
+}
+
+.climb-logo {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 14px 0 0;
+}
+
+.climb-logo__name {
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-size: clamp(36px, 4.4vw, 58px);
+  font-weight: 700;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+}
+
+.climb-logo__sub {
+  align-self: flex-start;
+  padding: 8px 12px;
+  font-family: var(--climb-pixel);
+  font-size: 11px;
+  color: #fff;
+  text-transform: uppercase;
+  background: var(--climb-rope);
+  border-radius: 6px;
+  box-shadow: 4px 4px 0 var(--climb-ink);
+  transform: rotate(-2deg);
+}
+
+.climb-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+  list-style: none;
+  color: rgba(42, 26, 18, 0.75);
+}
+
+.climb-legend kbd {
+  margin-right: 4px;
+  padding: 2px 6px;
+  font-family: var(--climb-pixel);
+  font-size: 8px;
+  background: var(--climb-paper-2);
+  border-radius: 4px;
+  box-shadow: 0 2px 0 rgba(42, 26, 18, 0.35);
+}
+
+.climb-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+}
+
+.climb-stats li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  background: var(--climb-paper-2);
+  border-radius: 10px;
+  box-shadow: inset 0 0 0 1px rgba(42, 26, 18, 0.15);
+}
+
+.climb-stats strong {
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-size: 20px;
+  line-height: 1.1;
+}
+
+.climb-stats__label {
+  font-size: 12px;
+  color: rgba(42, 26, 18, 0.7);
+}
+
+.climb-ticks {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+
+.climb-ticks li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.climb-ticks__box {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  margin-top: 4px;
+  background: var(--accent);
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--climb-ink);
+}
+
+.climb-beta {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0 0 4px;
+  padding: 12px 14px;
+  color: #fff;
+  background: var(--climb-ink);
+  border-radius: 12px;
+}
+
+.climb-beta__label {
+  flex: none;
+  padding: 4px 6px;
+  font-family: var(--climb-pixel);
+  font-size: 8px;
+  color: var(--climb-ink);
+  text-transform: uppercase;
+  background: var(--climb-yellow);
+  border-radius: 4px;
+}
+
+.climb-beta p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.climb-results {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin: 16px 0;
+}
+
+.climb-rank {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 104px;
+  height: 104px;
+  color: var(--climb-ink);
+  background: var(--climb-yellow);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 3px var(--climb-ink),
+    6px 6px 0 3px rgba(42, 26, 18, 0.3);
+  animation: climb-stamp 0.5s 0.3s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+.climb-rank__letter {
+  font-family: var(--climb-pixel);
+  font-size: 32px;
+  line-height: 1;
+}
+
+.climb-rank__note {
+  font-family: var(--climb-pixel);
+  font-size: 7px;
+  text-transform: uppercase;
+}
+
+.climb-results__stats {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.climb-results__stats div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.climb-results__stats dt {
+  font-size: 13px;
+  color: rgba(42, 26, 18, 0.7);
+}
+
+.climb-results__stats dd {
+  margin: 0;
+  font-family: var(--climb-pixel);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.climb-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* ---------- Buttons ---------- */
+.climb-btn {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 50px;
+  padding: 10px 18px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 12px;
+  color: var(--climb-ink);
+  background: var(--climb-paper-2);
+  box-shadow:
+    inset 0 0 0 2px var(--climb-ink),
+    0 4px 0 var(--climb-ink);
+  font-family: var(--climb-pixel);
+  font-size: 11px;
+  line-height: 1.2;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform 0.1s,
+    box-shadow 0.1s,
+    background 0.2s;
+}
+
+.climb-btn:hover {
+  background: #fff;
+  transform: translateY(-1px);
+}
+
+.climb-btn:active {
+  transform: translateY(3px);
+  box-shadow:
+    inset 0 0 0 2px var(--climb-ink),
+    0 1px 0 var(--climb-ink);
+}
+
+.climb-btn:focus-visible {
+  outline: 3px solid var(--climb-rope);
+  outline-offset: 3px;
+}
+
+.climb-btn--primary {
+  background: linear-gradient(180deg, #ffe27a, #ffc93c);
+}
+
+.climb-btn--primary:hover {
+  background: linear-gradient(180deg, #fff0a8, #ffd45c);
+}
+
+.climb-btn--primary::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.55) 50%, transparent 65%);
+  transform: translateX(-120%);
+  animation: climb-shine 3.2s 1.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.climb-btn--ghost {
+  flex: none;
+  width: 50px;
+  padding: 0;
+}
+
+.climb-btn--small {
+  min-height: 40px;
+  padding: 8px 14px;
+  font-size: 9px;
+}
+
+.climb-btn__sub {
+  font-size: 7px;
+  opacity: 0.75;
+  text-transform: none;
+}
+
+.climb-card--start .climb-btn--primary {
+  min-height: 58px;
+  font-size: 13px;
+}
+
+.climb-pad {
+  position: absolute;
+  right: clamp(12px, 3vw, 28px);
+  bottom: clamp(16px, 4vh, 32px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.climb-btn--icon {
+  width: 48px;
+  min-height: 48px;
+  padding: 0;
+  font-size: 14px;
+  color: #fff;
+  background: rgba(42, 26, 18, 0.72);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, 0.4),
+    0 4px 0 rgba(42, 26, 18, 0.6);
+}
+
+.climb-btn--icon:hover {
+  background: rgba(42, 26, 18, 0.9);
+}
+
+/* ---------- Animations ---------- */
+@keyframes climb-card-in {
+  from {
+    opacity: 0;
+    transform: translate(40px, -50%) scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, -50%) scale(1);
+  }
+}
+
+@keyframes climb-card-out {
+  from {
+    opacity: 1;
+    transform: translate(0, -50%);
+  }
+  to {
+    opacity: 0;
+    transform: translate(0, -30%);
+  }
+}
+
+@keyframes climb-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes climb-stamp {
+  from {
+    opacity: 0;
+    transform: scale(2.2) rotate(-12deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+@keyframes climb-shine {
+  0% {
+    transform: translateX(-120%);
+  }
+  35%,
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes climb-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.3) rotate(-8deg);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+@keyframes climb-wobble {
+  from {
+    transform: rotate(-3deg) scale(1);
+  }
+  to {
+    transform: rotate(3deg) scale(1.06);
+  }
+}
+
+@keyframes climb-shake {
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+  25% {
+    transform: translate(-3px, 2px);
+  }
+  75% {
+    transform: translate(3px, -2px);
+  }
+}
+
+@keyframes climb-blink {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* ---------- Small screens: bottom-sheet cards ---------- */
+@media (max-width: 760px) {
+  .climb-hud {
+    gap: 8px;
+    padding: 10px 12px;
+  }
+
+  .climb-hud__stat--wide {
+    display: none;
+  }
+
+  .climb-hud__stat {
+    padding: 6px 8px;
+  }
+
+  .climb-hud__value,
+  .climb-hud__pitch {
+    font-size: 10px;
+  }
+
+  .climb-hud__pitch {
+    padding: 8px 10px;
+  }
+
+  .climb-topo {
+    top: 74px;
+    bottom: auto;
+    height: 34%;
+    left: 10px;
+  }
+
+  .climb-topo__pip {
+    width: 12px;
+    height: 12px;
+    border-width: 2px;
+  }
+
+  .climb-callout {
+    top: 14%;
+  }
+
+  .climb-card,
+  .climb-card--start {
+    top: auto;
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    width: auto;
+    max-height: 58%;
+    padding: 20px 18px 16px;
+    font-size: 14px;
+    border-radius: 16px;
+    transform: none;
+  }
+
+  .climb-card__actions {
+    bottom: -16px;
+    margin: 16px -18px 0;
+    padding: 12px 18px 16px;
+  }
+
+  .climb-card__num {
+    width: 52px;
+    height: 52px;
+    font-size: 18px;
+  }
+
+  .climb-card__title {
+    font-size: 22px;
+  }
+
+  .climb-card__headline {
+    font-size: 15px;
+  }
+
+  .climb-legend {
+    display: none;
+  }
+
+  .climb-rank {
+    width: 84px;
+    height: 84px;
+  }
+
+  .climb-rank__letter {
+    font-size: 26px;
+  }
+
+  .climb-pad {
+    display: none;
+  }
+
+  @keyframes climb-card-in {
+    from {
+      opacity: 0;
+      transform: translateY(40px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  @keyframes climb-card-out {
+    from {
+      opacity: 1;
+      transform: none;
+    }
+    to {
+      opacity: 0;
+      transform: translateY(60px);
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .climb-card,
+  .climb-card.is-leaving,
+  .climb-in,
+  .climb-rank,
+  .climb-dot,
+  .climb-callout__name,
+  .climb-callout__points,
+  .climb-callout__note {
+    animation: none;
+  }
+
+  .climb-btn--primary::after {
+    display: none;
+  }
+
+  .climb-card.is-leaving {
+    opacity: 0;
+  }
+}

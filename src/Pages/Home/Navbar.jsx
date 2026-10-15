@@ -72,6 +72,9 @@ export default function Navbar() {
           <Link to="/ski" className="nav__game" onClick={() => setOpen(false)}>
             Ski the story ⛷
           </Link>
+          <Link to="/climb" className="nav__game" onClick={() => setOpen(false)}>
+            Climb the story 🧗
+          </Link>
         </nav>
       </div>
       <div
